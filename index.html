@@ -4,15 +4,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProgressLens: AI Journey Maker</title>
+    <title>Stride: AI Journey Maker & Roadmap Generator</title>
+    <meta name="description" content="Take your next stride. Generate personalized, AI-powered roadmaps for any goal. Track progress and export cinematic social reels.">
+    
+    <!-- OpenGraph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://getstride.app/">
+    <meta property="og:title" content="Stride: AI Journey Maker">
+    <meta property="og:description" content="Achieve your goals with structured AI milestones and intelligent insights.">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Stride: AI Journey Maker">
+    <meta property="twitter:description" content="Achieve your goals with structured AI milestones.">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-soft: #eef2ff;
+            --primary-text: #4f46e5;
+            --primary-shadow: rgba(79, 70, 229, 0.1);
+            --gradient-start: #6366f1;
+            --gradient-end: #a855f7;
+        }
+
+        .theme-emerald {
+            --primary: #059669;
+            --primary-hover: #047857;
+            --primary-soft: #ecfdf5;
+            --primary-text: #059669;
+            --primary-shadow: rgba(5, 150, 105, 0.1);
+            --gradient-start: #10b981;
+            --gradient-end: #3b82f6;
+        }
+
+        .theme-rose {
+            --primary: #e11d48;
+            --primary-hover: #be123c;
+            --primary-soft: #fff1f2;
+            --primary-text: #e11d48;
+            --primary-shadow: rgba(225, 29, 72, 0.1);
+            --gradient-start: #f43f5e;
+            --gradient-end: #fb923c;
+        }
+
+        .theme-amber {
+            --primary: #d97706;
+            --primary-hover: #b45309;
+            --primary-soft: #fffbeb;
+            --primary-text: #d97706;
+            --primary-shadow: rgba(217, 119, 6, 0.1);
+            --gradient-start: #f59e0b;
+            --gradient-end: #d97706;
+        }
+
+        .theme-slate {
+            --primary: #334155;
+            --primary-hover: #1e293b;
+            --primary-soft: #f1f5f9;
+            --primary-text: #334155;
+            --primary-shadow: rgba(51, 65, 85, 0.1);
+            --gradient-start: #475569;
+            --gradient-end: #0f172a;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
+            transition: background-color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .glass-morphism {
             background: rgba(255, 255, 255, 0.8);
@@ -20,7 +87,7 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
         .gradient-text {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -30,6 +97,19 @@
         }
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes stepComplete {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.02); border-color: #10b981; background-color: #f0fdf4; box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
+            100% { transform: scale(1); }
+        }
+        .animate-step-complete {
+            animation: stepComplete 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        html, body {
+            overscroll-behavior-y: none;
         }
     </style>
 <script type="importmap">
@@ -45,6 +125,14 @@
 </script>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #f8fafc;">
+            <div style="text-align: center;">
+                <div style="width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <p style="font-family: 'Inter', sans-serif; font-weight: 600; color: #64748b; font-size: 14px;">Initializing Stride...</p>
+            </div>
+        </div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    </div>
 </body>
 </html>

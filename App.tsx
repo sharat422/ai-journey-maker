@@ -1,111 +1,218 @@
 
-import React, { useState, useEffect } from 'react';
-import { Journey } from './types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Journey, AppTheme, User } from './types';
 import Dashboard from './components/Dashboard';
 import JourneyBuilder from './components/JourneyBuilder';
 import JourneyDetail from './components/JourneyDetail';
+import LegalView from './components/LegalView';
+import SubscriptionModal from './components/SubscriptionModal';
+import AuthView from './components/AuthView';
+import { db } from './services/dbService';
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
   const [journeys, setJourneys] = useState<Journey[]>([]);
-  const [view, setView] = useState<'dashboard' | 'create' | 'detail'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms'>('dashboard');
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [theme, setTheme] = useState<AppTheme>('default');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoadingJourneys, setIsLoadingJourneys] = useState(false);
+  
+  const firedReminders = useRef<Set<string>>(new Set());
 
-  // Persistence (local storage)
+  // Initial load
   useEffect(() => {
-    const saved = localStorage.getItem('progresslens_journeys');
-    if (saved) {
-      setJourneys(JSON.parse(saved));
+    const savedUser = localStorage.getItem('stride_session_user');
+    const savedTheme = localStorage.getItem('stride_theme');
+    
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+    if (savedTheme) {
+      setTheme(savedTheme as AppTheme);
+    }
+    
+    setIsInitialized(true);
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
     }
   }, []);
 
+  // Fetch journeys when user changes
   useEffect(() => {
-    localStorage.setItem('progresslens_journeys', JSON.stringify(journeys));
+    if (!user) {
+      setJourneys([]);
+      return;
+    }
+
+    const fetchJourneys = async () => {
+      setIsLoadingJourneys(true);
+      try {
+        const userJourneys = await db.getUserJourneys(user.id);
+        setJourneys(userJourneys);
+      } catch (err) {
+        console.error("Failed to load journeys", err);
+      } finally {
+        setIsLoadingJourneys(false);
+      }
+    };
+
+    fetchJourneys();
+  }, [user]);
+
+  // Reminders logic
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      journeys.forEach(journey => {
+        journey.milestones.forEach(milestone => {
+          milestone.steps.forEach(step => {
+            if (step.reminderAt && step.reminderAt <= now && !step.completed && !firedReminders.current.has(step.id)) {
+              firedReminders.current.add(step.id);
+              triggerReminder(journey.title, step.title);
+            }
+          });
+        });
+      });
+    }, 30000);
+    return () => clearInterval(interval);
   }, [journeys]);
 
-  const handleCreateJourney = (newJourney: Journey) => {
-    setJourneys([newJourney, ...journeys]);
-    setSelectedJourneyId(newJourney.id);
-    setView('detail');
+  const triggerReminder = (journeyTitle: string, stepTitle: string) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Stride Reminder', {
+        body: `Next Step: ${stepTitle}\nJourney: ${journeyTitle}`,
+        icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
+      });
+    }
   };
 
-  const handleUpdateJourney = (updated: Journey) => {
-    setJourneys(journeys.map(j => j.id === updated.id ? updated : j));
+  const handleLogin = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('stride_session_user', JSON.stringify(userData));
   };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('stride_session_user');
+    setView('dashboard');
+  };
+
+  const handleCreateJourney = async (newJourney: Journey) => {
+    if (!user) return;
+    const journeyWithUser = { ...newJourney, userId: user.id };
+    setJourneys([journeyWithUser, ...journeys]);
+    setSelectedJourneyId(journeyWithUser.id);
+    setView('detail');
+    await db.saveJourney(journeyWithUser);
+  };
+
+  const handleUpdateJourney = async (updated: Journey) => {
+    setJourneys(journeys.map(j => j.id === updated.id ? updated : j));
+    await db.saveJourney(updated);
+  };
+
+  const handleUpgradeSuccess = async () => {
+    if (!user) return;
+    const updatedUser = { ...user, isPro: true };
+    setUser(updatedUser);
+    localStorage.setItem('stride_session_user', JSON.stringify(updatedUser));
+    await db.setProStatus(user.id, true);
+  };
+
+  if (!isInitialized) return null;
+
+  if (!user) {
+    return <AuthView onLogin={handleLogin} />;
+  }
 
   const currentJourney = journeys.find(j => j.id === selectedJourneyId);
+  const themes: { id: AppTheme, color: string }[] = [
+    { id: 'default', color: 'bg-[#4f46e5]' },
+    { id: 'emerald', color: 'bg-[#059669]' },
+    { id: 'rose', color: 'bg-[#e11d48]' },
+    { id: 'amber', color: 'bg-[#d97706]' },
+    { id: 'slate', color: 'bg-[#334155]' },
+  ];
 
   return (
-    <div className="min-h-screen pb-12">
-      {/* Navigation */}
+    <div className={`min-h-screen pb-12 flex flex-col transition-colors duration-300 ${theme === 'default' ? '' : `theme-${theme}`}`}>
       <nav className="sticky top-0 z-50 glass-morphism border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div 
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setView('dashboard')}
-          >
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setView('dashboard')}>
+            <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center shadow-lg">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-xl font-bold tracking-tight text-slate-800">
-              Progress<span className="text-indigo-600">Lens</span>
-            </span>
+            <span className="text-xl font-bold text-slate-800">Stride <span className="text-[var(--primary-text)]">AI</span></span>
+            {user.isPro && <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded font-black ml-1">Pro</span>}
           </div>
           
           <div className="flex items-center gap-6">
-            <button 
-              onClick={() => setView('dashboard')}
-              className={`text-sm font-semibold transition-colors ${view === 'dashboard' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-900'}`}
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => setView('create')}
-              className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-all shadow-sm"
-            >
-              Start New
-            </button>
+            <div className="hidden md:flex items-center gap-2 bg-slate-100 p-1 rounded-full border border-slate-200">
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id);
+                    localStorage.setItem('stride_theme', t.id);
+                  }}
+                  className={`w-5 h-5 rounded-full ${t.color} border-2 ${theme === t.id ? 'border-white scale-110 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                />
+              ))}
+            </div>
+
+            <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 hidden md:block uppercase tracking-widest">Sign Out</button>
+
+            {!user.isPro && (
+              <button onClick={() => setIsSubscriptionModalOpen(true)} className="text-sm font-bold text-[var(--primary-text)] hidden sm:block">Go Pro</button>
+            )}
+            <button onClick={() => setView('dashboard')} className={`text-sm font-semibold ${view === 'dashboard' ? 'text-[var(--primary-text)] font-bold' : 'text-slate-500'}`}>Home</button>
+            <button onClick={() => setView('create')} className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 active:scale-95 transition-all">New Stride</button>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 pt-10">
-        {view === 'dashboard' && (
-          <Dashboard 
-            journeys={journeys} 
-            onSelectJourney={(id) => {
-              setSelectedJourneyId(id);
-              setView('detail');
-            }}
-            onCreateNew={() => setView('create')}
-          />
-        )}
-
-        {view === 'create' && (
-          <JourneyBuilder 
-            onJourneyCreated={handleCreateJourney}
-            onCancel={() => setView('dashboard')}
-          />
-        )}
-
-        {view === 'detail' && currentJourney && (
-          <JourneyDetail 
-            journey={currentJourney}
-            onUpdateJourney={handleUpdateJourney}
-            onBack={() => setView('dashboard')}
-          />
+      <main className="max-w-7xl mx-auto px-4 pt-10 flex-grow w-full">
+        {isLoadingJourneys ? (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+             <div className="w-8 h-8 border-2 border-slate-200 border-t-[var(--primary)] rounded-full animate-spin mb-4"></div>
+             <p className="text-sm font-medium">Syncing your journey data...</p>
+          </div>
+        ) : (
+          <>
+            {view === 'dashboard' && (
+              <Dashboard 
+                journeys={journeys} 
+                isPro={user.isPro}
+                userName={user.name || user.email.split('@')[0]}
+                onUpgrade={() => setIsSubscriptionModalOpen(true)}
+                onSelectJourney={(id) => { setSelectedJourneyId(id); setView('detail'); }}
+                onCreateNew={() => setView('create')}
+              />
+            )}
+            {view === 'create' && <JourneyBuilder onJourneyCreated={handleCreateJourney} onCancel={() => setView('dashboard')} isPro={user.isPro} />}
+            {view === 'detail' && currentJourney && <JourneyDetail journey={currentJourney} onUpdateJourney={handleUpdateJourney} onBack={() => setView('dashboard')} />}
+            {(view === 'privacy' || view === 'terms') && <LegalView type={view} onBack={() => setView('dashboard')} />}
+          </>
         )}
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="mt-20 border-t border-slate-100 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-slate-400 text-xs font-medium">
-            &copy; 2024 ProgressLens AI. Empowering growth through intelligent roadmaps.
-          </p>
+      <SubscriptionModal isOpen={isSubscriptionModalOpen} onClose={() => setIsSubscriptionModalOpen(false)} onSuccess={handleUpgradeSuccess} />
+
+      <footer className="mt-20 border-t border-slate-100 py-12">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all">
+            <span className="text-sm font-bold text-slate-800">Stride AI</span>
+          </div>
+          <div className="flex gap-8">
+            <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 uppercase md:hidden">Logout</button>
+            <button onClick={() => setView('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Privacy</button>
+            <button onClick={() => setView('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Terms</button>
+          </div>
         </div>
       </footer>
     </div>

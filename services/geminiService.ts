@@ -2,7 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Journey, Milestone, Step } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 const JOURNEY_SCHEMA = {
   type: Type.OBJECT,
@@ -30,25 +31,27 @@ const JOURNEY_SCHEMA = {
   required: ["title", "description", "category", "milestones"]
 };
 
-export async function generateJourney(goal: string, timeframe: string): Promise<Journey> {
+export async function generateJourney(goal: string, timeframe: string, model: string): Promise<Journey> {
+  const isProModel = model === "gemini-3-pro-preview";
+  
   const prompt = `Create a detailed learning roadmap for the following goal: "${goal}". 
   The target timeframe is "${timeframe}". 
   Break it down into logical milestones with actionable steps.
-  Be specific and practical.`;
+  Be specific and practical. ${isProModel ? "Since this is an ADVANCED reasoning request, provide significantly more depth, edge cases, and high-level strategic advice for each step." : ""}`;
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: model,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: JOURNEY_SCHEMA,
+        ...(isProModel ? { thinkingConfig: { thinkingBudget: 4000 } } : {})
       }
     });
 
     const data = JSON.parse(response.text);
     
-    // Transform API response to our Journey type
     const milestones: Milestone[] = data.milestones.map((m: any, mIdx: number) => ({
       id: `m-${Date.now()}-${mIdx}`,
       title: m.title,
@@ -61,8 +64,10 @@ export async function generateJourney(goal: string, timeframe: string): Promise<
       }))
     }));
 
+    // Fix: Added userId to satisfy Journey interface; App.tsx will populate it with the correct ID.
     return {
       id: `j-${Date.now()}`,
+      userId: '', 
       title: data.title,
       description: data.description,
       category: data.category,
@@ -73,5 +78,124 @@ export async function generateJourney(goal: string, timeframe: string): Promise<
   } catch (error) {
     console.error("Error generating journey:", error);
     throw new Error("Failed to generate journey. Please try again.");
+  }
+}
+
+export interface AIInsight {
+  type: 'achievement' | 'focus' | 'encouragement' | 'prediction';
+  text: string;
+  icon: string;
+}
+
+export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsight[]> {
+  const completedSteps = journey.milestones.reduce((acc, m) => acc + m.steps.filter(s => s.completed).length, 0);
+  const totalSteps = journey.milestones.reduce((acc, m) => acc + m.steps.length, 0);
+  
+  const progressData = journey.milestones.map(m => ({
+    title: m.title,
+    completed: m.steps.filter(s => s.completed).length,
+    total: m.steps.length
+  }));
+
+  const prompt = `Analyze this progress for the journey: "${journey.title}".
+  Description: ${journey.description}
+  Overall Progress: ${journey.progress}% (${completedSteps}/${totalSteps} steps).
+  Milestone Detail: ${JSON.stringify(progressData)}
+
+  Provide exactly 4 structured insights:
+  1. ACHIEVEMENT: Highlight something they have successfully done or a streak.
+  2. FOCUS: Identify the exact next step or concept they should master next.
+  3. ENCOURAGEMENT: A high-energy motivational statement specific to the goal.
+  4. PREDICTION: A "next big win" forecast based on their current trajectory.
+
+  Return ONLY a JSON object with a key "insights" which is an array of objects with "type", "text", and "icon" (single emoji).`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            insights: {
+              type: Type.ARRAY,
+              items: { 
+                type: Type.OBJECT,
+                properties: {
+                  type: { type: Type.STRING },
+                  text: { type: Type.STRING },
+                  icon: { type: Type.STRING }
+                },
+                required: ["type", "text", "icon"]
+              }
+            }
+          },
+          required: ["insights"]
+        }
+      }
+    });
+
+    const data = JSON.parse(response.text);
+    return data.insights;
+  } catch (error) {
+    console.error("Error analyzing progress:", error);
+    return [
+      { type: 'encouragement', text: "Keep moving forward, every small step counts!", icon: "🚀" },
+      { type: 'focus', text: "Review your upcoming steps to stay prepared.", icon: "🎯" },
+      { type: 'achievement', text: "You've already started the hardest part: beginning.", icon: "🌟" }
+    ];
+  }
+}
+
+export async function generateProgressVideo(journey: Journey, onStatusUpdate: (status: string) => void): Promise<string> {
+  // Always create a new instance right before making an API call for Veo models to ensure the latest API key is used
+  const videoAi = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  
+  const videoPrompt = `A dynamic, cinematic vertical social media reel for TikTok/Instagram. 
+  Theme: Personal growth and progress for "${journey.title}". 
+  The video shows an abstract 3D path or mountain being climbed, with glowing neon markers. 
+  Current milestone progress is ${journey.progress}%. 
+  Visual style: Futuristic UI overlays, sleek typography, high-contrast lighting, inspiring and modern. 
+  Aspect ratio 9:16. Vibrant colors matching ${journey.category}.`;
+
+  onStatusUpdate("Initializing Video AI...");
+  
+  try {
+    let operation = await videoAi.models.generateVideos({
+      model: 'veo-3.1-fast-generate-preview',
+      prompt: videoPrompt,
+      config: {
+        numberOfVideos: 1,
+        resolution: '720p',
+        aspectRatio: '9:16'
+      }
+    });
+
+    onStatusUpdate("Synthesizing cinematic frames...");
+
+    while (!operation.done) {
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      // Random reassuring messages
+      const statuses = [
+        "Synthesizing cinematic frames...",
+        "Rendering progress overlays...",
+        "Optimizing for social platforms...",
+        "Finalizing high-resolution textures...",
+        "Color grading for maximum impact..."
+      ];
+      onStatusUpdate(statuses[Math.floor(Math.random() * statuses.length)]);
+      operation = await videoAi.operations.getVideosOperation({operation: operation});
+    }
+
+    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+    if (!downloadLink) throw new Error("Video generation failed");
+    
+    // Append API key as required for fetching the MP4 bytes
+    return `${downloadLink}&key=${process.env.API_KEY}`;
+  } catch (err) {
+    console.error("Veo Error:", err);
+    throw err;
   }
 }

@@ -6,9 +6,12 @@ interface DashboardProps {
   journeys: Journey[];
   onSelectJourney: (id: string) => void;
   onCreateNew: () => void;
+  isPro: boolean;
+  onUpgrade: () => void;
+  userName: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCreateNew }) => {
+const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCreateNew, isPro, onUpgrade, userName }) => {
   const stats: UserStats = {
     completedJourneys: journeys.filter(j => j.progress === 100).length,
     activeJourneys: journeys.filter(j => j.progress < 100).length,
@@ -19,15 +22,19 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
 
   return (
     <div className="space-y-10 animate-fade-in">
-      {/* Welcome & Stats */}
       <section className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900">Hello, Achiever</h1>
-          <p className="text-slate-500 mt-2">Ready to take another step towards your goals?</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl font-bold text-slate-900">Hello, {userName}</h1>
+            {isPro && (
+              <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm">PRO</span>
+            )}
+          </div>
+          <p className="text-slate-500 mt-2">Ready to take another stride towards your goals?</p>
         </div>
         <div className="grid grid-cols-3 gap-4 w-full md:w-auto">
           {[
-            { label: 'Active', val: stats.activeJourneys, color: 'text-indigo-600' },
+            { label: 'Active', val: stats.activeJourneys, color: 'text-[var(--primary-text)]' },
             { label: 'Done', val: stats.completedJourneys, color: 'text-emerald-600' },
             { label: 'Steps', val: stats.totalStepsCompleted, color: 'text-amber-600' },
           ].map((s, i) => (
@@ -39,13 +46,27 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
         </div>
       </section>
 
-      {/* Journey List */}
+      {!isPro && (
+        <section className="bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-[var(--primary-shadow)] transition-all">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Upgrade to Stride Pro</h2>
+            <p className="opacity-90 max-w-lg">Get access to Gemini 3 Pro roadmaps with deeper reasoning, unlimited journeys, and advanced coaching.</p>
+          </div>
+          <button 
+            onClick={onUpgrade}
+            className="px-8 py-3 bg-white text-[var(--primary-text)] font-bold rounded-2xl hover:scale-105 transition-all whitespace-nowrap shadow-lg"
+          >
+            Go Pro for $6.99/mo
+          </button>
+        </section>
+      )}
+
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">My Journeys</h2>
           <button 
             onClick={onCreateNew}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+            className="px-5 py-2.5 bg-[var(--primary)] text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--primary-shadow)] flex items-center gap-2"
           >
             <span className="text-xl leading-none">+</span> New Journey
           </button>
@@ -53,18 +74,18 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
 
         {journeys.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-slate-200">
-            <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <div className="w-20 h-20 bg-[var(--primary-soft)] rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-[var(--primary-text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <h3 className="text-xl font-bold text-slate-800">No journeys yet</h3>
             <p className="text-slate-500 mt-2 max-w-sm mx-auto">Create your first AI-powered roadmap to start tracking your progress and achieving your dreams.</p>
             <button 
               onClick={onCreateNew}
-              className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all"
+              className="mt-8 px-8 py-3 bg-[var(--primary)] text-white rounded-2xl font-bold hover:opacity-90 transition-all"
             >
-              Start First Journey
+              Take Your First Stride
             </button>
           </div>
         ) : (
@@ -73,10 +94,10 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
               <div 
                 key={journey.id}
                 onClick={() => onSelectJourney(journey.id)}
-                className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:border-indigo-100 transition-all cursor-pointer relative overflow-hidden"
+                className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:border-[var(--primary-shadow)] transition-all cursor-pointer relative overflow-hidden"
               >
                 <div className="flex justify-between items-start mb-4">
-                  <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-widest">
+                  <span className="px-3 py-1 bg-[var(--primary-soft)] text-[var(--primary-text)] text-[10px] font-bold rounded-full uppercase tracking-widest">
                     {journey.category}
                   </span>
                   {journey.progress === 100 && (
@@ -87,7 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
                     </span>
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors mb-2 line-clamp-1">{journey.title}</h3>
+                <h3 className="text-xl font-bold text-slate-800 group-hover:text-[var(--primary-text)] transition-colors mb-2 line-clamp-1">{journey.title}</h3>
                 <p className="text-slate-500 text-sm line-clamp-2 h-10 mb-6">{journey.description}</p>
                 
                 <div className="space-y-2">
@@ -97,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
                   </div>
                   <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                     <div 
-                      className="bg-indigo-600 h-full rounded-full transition-all duration-1000"
+                      className="bg-[var(--primary)] h-full rounded-full transition-all duration-1000"
                       style={{ width: `${journey.progress}%` }}
                     />
                   </div>
@@ -105,7 +126,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
                 
                 <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                    <span>{journey.milestones.length} Milestones</span>
-                   <span className="group-hover:text-indigo-600 flex items-center gap-1">
+                   <span className="group-hover:text-[var(--primary-text)] flex items-center gap-1">
                      Details <span>→</span>
                    </span>
                 </div>
