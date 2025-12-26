@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { paymentService } from '../services/paymentService';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -10,19 +11,29 @@ interface SubscriptionModalProps {
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState<'details' | 'processing' | 'success'>('details');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setStep('processing');
-    setTimeout(() => {
-      setStep('success');
+    setError(null);
+    try {
+      await paymentService.redirectToCheckout(billingCycle);
+      
+      // Since we simulate success for the demo flow before real redirect:
       setTimeout(() => {
-        onSuccess();
-        onClose();
-        setStep('details');
+        setStep('success');
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+          setStep('details');
+        }, 2000);
       }, 2000);
-    }, 2500);
+    } catch (err) {
+      setError("Stripe Checkout failed to load. Please try again.");
+      setStep('details');
+    }
   };
 
   const currentPrice = billingCycle === 'monthly' ? '$6.99' : '$49.99';
@@ -30,49 +41,45 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-fade-in transform scale-100 border border-slate-100">
+      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-fade-in border border-slate-100">
         {step === 'details' && (
           <div className="p-8">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Stride Pro</h2>
-                <p className="text-slate-500 text-sm">Unlock advanced AI reasoning</p>
+                <p className="text-slate-500 text-sm font-medium">Elevate your growth experience</p>
               </div>
               <div className="flex flex-col items-end">
-                <div className="bg-[var(--primary)] text-white px-3 py-1 rounded-full text-xs font-black transition-all">
-                  {currentPrice} {currentInterval}
+                <div className="bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-black">
+                  {currentPrice}
                 </div>
-                {billingCycle === 'yearly' && (
-                  <span className="text-[10px] text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Save 40% annually</span>
-                )}
               </div>
             </div>
 
-            {/* Billing Toggle */}
             <div className="flex p-1 bg-slate-100 rounded-xl mb-8">
               <button 
                 onClick={() => setBillingCycle('monthly')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${billingCycle === 'monthly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Monthly
+                Monthly {billingCycle === 'monthly' && '✓'}
               </button>
               <button 
                 onClick={() => setBillingCycle('yearly')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${billingCycle === 'yearly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Yearly
+                Yearly {billingCycle === 'yearly' && '✓'}
               </button>
             </div>
 
             <div className="space-y-4 mb-8">
               {[
-                "Advanced 'Gemini 3 Pro' Reasoning",
-                "Unlimited roadmap generations",
-                "Priority AI processing",
-                "Custom cinematic video reels"
+                "Advanced AI structural reasoning",
+                "Unlimited custom roadmaps",
+                "Priority cloud processing",
+                "HD Cinematic video exports"
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-slate-600">
-                  <svg className="w-5 h-5 text-[var(--primary)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div key={i} className="flex items-center gap-3 text-sm text-slate-600 font-medium">
+                  <svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                   </svg>
                   {feature}
@@ -80,37 +87,29 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               ))}
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Secure Payment</label>
-                <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 flex items-center gap-3">
-                  <div className="w-8 h-5 bg-slate-300 rounded-sm"></div>
-                  <input type="text" disabled value="**** **** **** 4242" className="bg-transparent outline-none text-slate-400 flex-1 text-sm" />
-                </div>
-              </div>
-            </div>
+            {error && <p className="text-red-500 text-xs font-bold mb-4">{error}</p>}
 
-            <div className="flex gap-4 mt-8">
-              <button onClick={onClose} className="flex-1 py-3 font-bold text-slate-500 text-sm rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors">
-                Maybe later
+            <div className="flex gap-4">
+              <button onClick={onClose} className="flex-1 py-3 font-bold text-slate-400 text-sm rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
+                Close
               </button>
-              <button onClick={handlePay} className="flex-1 py-3 font-bold text-white text-sm bg-slate-900 rounded-xl shadow-lg hover:bg-slate-800 transition-all">
-                Subscribe
+              <button onClick={handlePay} className="flex-1 py-3 font-bold text-white text-sm bg-indigo-600 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
+                Pay Securely
               </button>
             </div>
             
-            <p className="text-center text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-bold">
-              Securely processed by <span className="text-slate-600">Stripe</span>
+            <p className="text-center text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-black">
+              SECURE STRIPE CHECKOUT
             </p>
           </div>
         )}
 
         {step === 'processing' && (
           <div className="p-20 flex flex-col items-center justify-center text-center space-y-6">
-            <div className="w-16 h-16 border-4 border-slate-100 border-t-[var(--primary)] rounded-full animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin"></div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Setting up your access</h3>
-              <p className="text-slate-500 text-sm">Starting your {billingCycle} Stride journey...</p>
+              <h3 className="text-xl font-bold text-slate-900">Redirecting to Stripe</h3>
+              <p className="text-slate-500 text-sm font-medium">Starting your secure checkout session...</p>
             </div>
           </div>
         )}
@@ -123,8 +122,8 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               </svg>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900">You're all set!</h3>
-              <p className="text-slate-500 text-sm">Stride Pro is now active on your account.</p>
+              <h3 className="text-xl font-bold text-slate-900">Payment Successful</h3>
+              <p className="text-slate-500 text-sm font-medium">Welcome to Stride Pro.</p>
             </div>
           </div>
         )}

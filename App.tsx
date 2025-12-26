@@ -8,62 +8,54 @@ import LegalView from './components/LegalView';
 import SubscriptionModal from './components/SubscriptionModal';
 import AuthView from './components/AuthView';
 import { db } from './services/dbService';
+import { auth } from './services/authService';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms'>('dashboard');
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
-  const [theme, setTheme] = useState<AppTheme>('default');
+  const [theme, setTheme] = useState<AppTheme>((localStorage.getItem('stride_theme') as AppTheme) || 'default');
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoadingJourneys, setIsLoadingJourneys] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   
   const firedReminders = useRef<Set<string>>(new Set());
 
-  // Initial load
+  // Listen for Auth changes (Real-time updates)
   useEffect(() => {
-    const savedUser = localStorage.getItem('stride_session_user');
-    const savedTheme = localStorage.getItem('stride_theme');
-    
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    if (savedTheme) {
-      setTheme(savedTheme as AppTheme);
-    }
-    
-    setIsInitialized(true);
-
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    const unsubscribe = auth.subscribe((u) => {
+      setUser(u);
+      setIsInitialized(true);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Fetch journeys when user changes
+  // Sync Journeys with DB when user is authenticated
   useEffect(() => {
     if (!user) {
       setJourneys([]);
       return;
     }
 
-    const fetchJourneys = async () => {
-      setIsLoadingJourneys(true);
+    const syncData = async () => {
+      setIsLoadingData(true);
       try {
         const userJourneys = await db.getUserJourneys(user.id);
         setJourneys(userJourneys);
       } catch (err) {
-        console.error("Failed to load journeys", err);
+        console.error("Sync failed", err);
       } finally {
-        setIsLoadingJourneys(false);
+        setIsLoadingData(false);
       }
     };
 
-    fetchJourneys();
+    syncData();
   }, [user]);
 
-  // Reminders logic
+  // Notifications logic remains robust
   useEffect(() => {
+    if (!user) return;
     const interval = setInterval(() => {
       const now = Date.now();
       journeys.forEach(journey => {
@@ -78,25 +70,19 @@ const App: React.FC = () => {
       });
     }, 30000);
     return () => clearInterval(interval);
-  }, [journeys]);
+  }, [journeys, user]);
 
   const triggerReminder = (journeyTitle: string, stepTitle: string) => {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('Stride Reminder', {
-        body: `Next Step: ${stepTitle}\nJourney: ${journeyTitle}`,
+        body: `Next: ${stepTitle}\nJourney: ${journeyTitle}`,
         icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
       });
     }
   };
 
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('stride_session_user', JSON.stringify(userData));
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('stride_session_user');
+  const handleLogout = async () => {
+    await auth.signOut();
     setView('dashboard');
   };
 
@@ -117,15 +103,14 @@ const App: React.FC = () => {
   const handleUpgradeSuccess = async () => {
     if (!user) return;
     const updatedUser = { ...user, isPro: true };
-    setUser(updatedUser);
-    localStorage.setItem('stride_session_user', JSON.stringify(updatedUser));
+    auth.updateUser(updatedUser);
     await db.setProStatus(user.id, true);
   };
 
   if (!isInitialized) return null;
 
   if (!user) {
-    return <AuthView onLogin={handleLogin} />;
+    return <AuthView onLogin={(u) => setUser(u)} />;
   }
 
   const currentJourney = journeys.find(j => j.id === selectedJourneyId);
@@ -177,10 +162,10 @@ const App: React.FC = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 pt-10 flex-grow w-full">
-        {isLoadingJourneys ? (
+        {isLoadingData ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
              <div className="w-8 h-8 border-2 border-slate-200 border-t-[var(--primary)] rounded-full animate-spin mb-4"></div>
-             <p className="text-sm font-medium">Syncing your journey data...</p>
+             <p className="text-sm font-medium">Loading secure stride session...</p>
           </div>
         ) : (
           <>
@@ -205,9 +190,7 @@ const App: React.FC = () => {
 
       <footer className="mt-20 border-t border-slate-100 py-12">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all">
-            <span className="text-sm font-bold text-slate-800">Stride AI</span>
-          </div>
+          <p className="text-slate-400 text-xs font-medium tracking-tight">&copy; 2024 Stride AI. All Rights Reserved.</p>
           <div className="flex gap-8">
             <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 uppercase md:hidden">Logout</button>
             <button onClick={() => setView('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Privacy</button>

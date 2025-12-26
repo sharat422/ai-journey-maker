@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { db } from '../services/dbService';
+import { auth } from '../services/authService';
 import { User } from '../types';
 
 interface AuthViewProps {
@@ -23,13 +23,13 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     try {
       let user: User;
       if (isLogin) {
-        user = await db.login(email, password);
+        user = await auth.signIn(email, password);
       } else {
-        user = await db.signup(email, password, name);
+        user = await auth.signUp(email, password, name);
       }
       onLogin(user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed.");
+      setError(err instanceof Error ? err.message : "Authentication failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -39,10 +39,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = await db.googleAuth();
+      const user = await auth.signInWithGoogle();
       onLogin(user);
     } catch (err) {
-      setError("Google authentication failed.");
+      setError("Google authentication was interrupted. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -57,13 +57,13 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
 
       <div className="w-full max-w-md animate-fade-in z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-[var(--primary-shadow)] animate-bounce">
+          <div className="w-16 h-16 bg-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-[var(--primary-shadow)]">
              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
              </svg>
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Stride AI</h1>
-          <p className="text-slate-500 mt-2 font-medium">Take the next stride in your journey.</p>
+          <p className="text-slate-500 mt-2 font-medium">Securely access your personal roadmaps.</p>
         </div>
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 border border-slate-100">
@@ -83,7 +83,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold animate-fade-in">
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-[11px] font-bold leading-relaxed">
               {error}
             </div>
           )}
@@ -116,9 +116,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             </div>
 
             <div className="space-y-1">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
-              </div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
               <input 
                 type="password" 
                 required
@@ -132,7 +130,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
@@ -147,7 +145,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               <div className="w-full border-t border-slate-100"></div>
             </div>
             <div className="relative flex justify-center text-[10px] uppercase font-black text-slate-300 tracking-widest">
-              <span className="bg-white px-4">Or continue with</span>
+              <span className="bg-white px-4">Instant Access</span>
             </div>
           </div>
 
@@ -168,7 +166,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
         </div>
 
         <p className="text-center text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-black">
-          Powered by Gemini 3 & Veo
+          Enterprise Security Enabled
         </p>
       </div>
     </div>
