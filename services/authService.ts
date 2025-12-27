@@ -32,7 +32,7 @@ class AuthService {
   private async mapUser(sbUser: any): Promise<User> {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name, is_pro')
+      .select('name, is_pro, avatar_url')
       .eq('id', sbUser.id)
       .single();
 
@@ -41,7 +41,7 @@ class AuthService {
       email: sbUser.email || '',
       name: profile?.name || sbUser.user_metadata?.full_name || '',
       isPro: profile?.is_pro || false,
-      avatar: sbUser.user_metadata?.avatar_url
+      avatar: profile?.avatar_url || sbUser.user_metadata?.avatar_url || ''
     };
   }
 
@@ -94,6 +94,14 @@ class AuthService {
 
   getCurrentUser() {
     return this.currentUser;
+  }
+
+  async refreshUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      this.currentUser = await this.mapUser(session.user);
+      this.notify();
+    }
   }
 
   updateUser(updated: User) {

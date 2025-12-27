@@ -7,13 +7,14 @@ import JourneyDetail from './components/JourneyDetail';
 import LegalView from './components/LegalView';
 import SubscriptionModal from './components/SubscriptionModal';
 import AuthView from './components/AuthView';
+import SettingsView from './components/SettingsView';
 import { db } from './services/dbService';
 import { auth } from './services/authService';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [journeys, setJourneys] = useState<Journey[]>([]);
-  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms' | 'settings'>('dashboard');
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>((localStorage.getItem('stride_theme') as AppTheme) || 'default');
@@ -150,7 +151,15 @@ const App: React.FC = () => {
               ))}
             </div>
 
-            <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 hidden md:block uppercase tracking-widest">Sign Out</button>
+            <button onClick={() => setView('settings')} className="relative group">
+               {user.avatar ? (
+                 <img src={user.avatar} className="w-8 h-8 rounded-full border border-slate-200" alt="Profile" />
+               ) : (
+                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-400">
+                   {user.name?.charAt(0) || user.email.charAt(0)}
+                 </div>
+               )}
+            </button>
 
             {!user.isPro && (
               <button onClick={() => setIsSubscriptionModalOpen(true)} className="text-sm font-bold text-[var(--primary-text)] hidden sm:block">Go Pro</button>
@@ -182,6 +191,7 @@ const App: React.FC = () => {
             {view === 'create' && <JourneyBuilder onJourneyCreated={handleCreateJourney} onCancel={() => setView('dashboard')} isPro={user.isPro} />}
             {view === 'detail' && currentJourney && <JourneyDetail journey={currentJourney} onUpdateJourney={handleUpdateJourney} onBack={() => setView('dashboard')} />}
             {(view === 'privacy' || view === 'terms') && <LegalView type={view} onBack={() => setView('dashboard')} />}
+            {view === 'settings' && <SettingsView user={user} onBack={() => setView('dashboard')} />}
           </>
         )}
       </main>
@@ -192,7 +202,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-slate-400 text-xs font-medium tracking-tight">&copy; 2024 Stride AI. All Rights Reserved.</p>
           <div className="flex gap-8">
-            <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 uppercase md:hidden">Logout</button>
+            <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sign Out</button>
             <button onClick={() => setView('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Privacy</button>
             <button onClick={() => setView('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Terms</button>
           </div>
