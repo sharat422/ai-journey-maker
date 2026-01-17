@@ -87,9 +87,10 @@ class AuthService {
   }
 
   async signOut() {
-    await supabase.auth.signOut();
+    const {error} = await supabase.auth.signOut();
+    if(error) console.error("Supabse signout error:", error);
     this.currentUser = null;
-    this.notify();
+    this.notify(); //this triggers the subscribe listener in App.tsx
   }
 
   getCurrentUser() {

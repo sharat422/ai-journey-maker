@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { generateJourney } from '../services/geminiService';
 import { Journey } from '../types';

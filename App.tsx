@@ -43,6 +43,7 @@ const App: React.FC = () => {
       setIsLoadingData(true);
       try {
         const userJourneys = await db.getUserJourneys(user.id);
+        console.log("Journeys fetched for user:", user.id, userJourneys); // Check this log
         setJourneys(userJourneys);
       } catch (err) {
         console.error("Sync failed", err);
@@ -54,6 +55,27 @@ const App: React.FC = () => {
     syncData();
   }, [user]);
 
+
+  // Add this inside the App component
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+
+  if (sessionId && user) {
+    const finalizeUpgrade = async () => {
+      // 1. Update the database via your dbService
+      await db.setProStatus(user.id, true);
+      
+      // 2. Update the local auth state
+      auth.updateUser({ ...user, isPro: true });
+      
+      // 3. Remove session_id from URL for a clean UI
+      window.history.replaceState({}, document.title, "/");
+    };
+    
+    finalizeUpgrade();
+  }
+}, [user]);
   // Notifications logic remains robust
   useEffect(() => {
     if (!user) return;
@@ -83,17 +105,45 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await auth.signOut();
-    setView('dashboard');
+    try{
+      await auth.signOut();
+      // Force reset local state to ensure the UI updates
+      setUser(null);
+      setJourneys([]);
+      setView('dashboard');
+    } catch (error){
+      console.error("Logout failed:", error);
+    }
+    
   };
 
   const handleCreateJourney = async (newJourney: Journey) => {
-    if (!user) return;
-    const journeyWithUser = { ...newJourney, userId: user.id };
-    setJourneys([journeyWithUser, ...journeys]);
+    if (!user || !user.id) {console.error("No authenticated user found."); return;} 
+
+// Ensure the journey object has the correct user_id from the current session
+ // const journeyWithUser: Journey = { 
+ //   ...newJourney, 
+ //   userId: user.id 
+ // };
+   
+   const journeyWithUser: Journey = { 
+    ...newJourney, 
+    id: newJourney.id || `j-${Date.now()}`,
+    userId: user.id,
+    createdAt: newJourney.createdAt || Date.now()
+   };
+try {
+    // 1. Save to database FIRST to ensure persistence
+    await db.saveJourney(journeyWithUser);
+    
+    // 2. Update local state ONLY after successful DB save
+    setJourneys(prev => [journeyWithUser, ...prev]);
     setSelectedJourneyId(journeyWithUser.id);
     setView('detail');
-    await db.saveJourney(journeyWithUser);
+  } catch (err) {
+    console.error("Failed to save journey to Supabase:", err);
+    alert("Could not save your journey. Please check your connection.");
+  }
   };
 
   const handleUpdateJourney = async (updated: Journey) => {

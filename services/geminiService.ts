@@ -3,7 +3,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Journey, Milestone, Step } from "../types";
 
 // Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+//console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
+const API_KEY = import.meta.env.VITE_API_KEY
+const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
 
 const JOURNEY_SCHEMA = {
   type: Type.OBJECT,
@@ -40,7 +42,7 @@ export async function generateJourney(goal: string, timeframe: string, model: st
   Be specific and practical. ${isProModel ? "Since this is an ADVANCED reasoning request, provide significantly more depth, edge cases, and high-level strategic advice for each step." : ""}`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await genAI.models.generateContent({
       model: model,
       contents: prompt,
       config: {
@@ -111,7 +113,7 @@ export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsigh
   Return ONLY a JSON object with a key "insights" which is an array of objects with "type", "text", and "icon" (single emoji).`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await genAI.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {

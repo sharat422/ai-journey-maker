@@ -18,20 +18,18 @@ const ExportSocialModal: React.FC<ExportSocialModalProps> = ({ journey, isOpen, 
   if (!isOpen) return null;
 
   const handleStartGeneration = async () => {
-    if (!(window as any).aistudio?.hasSelectedApiKey || !await (window as any).aistudio.hasSelectedApiKey()) {
-      setStatus("Select a key for video generation...");
-      await (window as any).aistudio.openSelectKey();
-    }
-
     setLoading(true);
     setError(null);
+    setStatus("Initializing video generation...");
+   
     try {
       const url = await generateProgressVideo(journey, (s) => setStatus(s));
       setVideoUrl(url);
       setStatus("Your reel is ready!");
     } catch (err) {
+      console.error(err);
       setError("Reel generation failed. Check your paid API key status.");
-      setLoading(false);
+      
     } finally {
       setLoading(false);
     }

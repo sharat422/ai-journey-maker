@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { paymentService } from '../services/paymentService';
+import { auth } from '../services/authService';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -13,26 +14,37 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [error, setError] = useState<string | null>(null);
 
+  const [loading, setLoading] = useState(false);
+
   if (!isOpen) return null;
 
   const handlePay = async () => {
-    setStep('processing');
+    setLoading(true);
     setError(null);
+    const user = auth.getCurrentUser();
+    if (!user) {
+    setError("You must be logged in to subscribe.");
+    setLoading(false); // Stop loading if no user
+    return;
+  }
+    setStep('processing');
+   
     try {
-      await paymentService.redirectToCheckout(billingCycle);
-      
-      // Since we simulate success for the demo flow before real redirect:
-      setTimeout(() => {
-        setStep('success');
-        setTimeout(() => {
-          onSuccess();
-          onClose();
-          setStep('details');
-        }, 2000);
-      }, 2000);
-    } catch (err) {
+      // 1. Get the session ID from your FastAPI backend
+    const sessionId = await paymentService.createCheckoutSession(user.id, billingCycle);
+    
+    if (!sessionId) {
+      throw new Error("No session ID returned from the server.");
+    }
+    // 3. This opens the Stripe page
+      await paymentService.redirectToCheckout(sessionId);
+
+      } catch (err: any) {
+      console.error("Payment failed:", err);
       setError("Stripe Checkout failed to load. Please try again.");
       setStep('details');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,8 +108,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               <button onClick={handlePay} className="flex-1 py-3 font-bold text-white text-sm bg-indigo-600 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
                 Pay Securely
               </button>
+              
             </div>
-            
+            <h3 className="text-center text-xs text-slate-400 mt-2">
+                Start 7-Day Free Trial,  Cancel anytime.
+              </h3>
             <p className="text-center text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-black">
               SECURE STRIPE CHECKOUT
             </p>
