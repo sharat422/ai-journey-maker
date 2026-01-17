@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    /* FIX: This tells TypeScript how to handle React Code */
+    /* VITAL FIX: This allows JSX */
     "jsx": "react-jsx",
     /* Linting */
     "strict": true,
@@ -23,7 +23,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
+  /* FIX: Explicitly list the patterns so it finds your App.tsx and config */
   "include": [
-    "src"
+    "src/**/*",
+    "src/**/*.tsx",
+    "vite.config.ts"
   ]
 }
