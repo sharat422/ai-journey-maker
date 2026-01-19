@@ -68,7 +68,7 @@ export async function generateJourney(goal: string, timeframe: string, model: st
 
     // Fix: Added userId to satisfy Journey interface; App.tsx will populate it with the correct ID.
     return {
-      id: `j-${Date.now()}`,
+      id: crypto.randomUUID(),
       userId: '', 
       title: data.title,
       description: data.description,
