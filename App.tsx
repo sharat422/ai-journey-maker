@@ -128,7 +128,7 @@ useEffect(() => {
    
    const journeyWithUser: Journey = { 
     ...newJourney, 
-    id: newJourney.id || `j-${Date.now()}`,
+    id: newJourney.id || crypto.randomUUID(),
     userId: user.id,
     createdAt: newJourney.createdAt || Date.now()
    };
