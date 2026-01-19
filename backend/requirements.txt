@@ -4,3 +4,4 @@ stripe==7.11.0
 supabase==2.3.4
 python-dotenv==1.0.0
 pydantic==2.5.3
+httpx==0.27.2
