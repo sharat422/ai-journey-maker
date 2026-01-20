@@ -9,36 +9,66 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Environment Variables Validation
+required_vars = [
+    "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_ID_MONTHLY",
+    "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"
+]
+
+missing_vars = [var for var in required_vars if not os.getenv(var)]
+
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID_MONTHLY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY") # Use Service Role for backend bypass
+SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-print(SUPABASE_PUBLISHABLE_KEY)
-print(SUPABASE_URL)
-supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+# Create Client safely
+supabase_admin = None
+if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    try:
+        supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    except Exception as e:
+        print(f"Supabase Client Init Error: {e}")
+
 app = FastAPI()
 
-# Enable CORS so your React app can talk to this backend
+# Enable CORS
+origins = [
+    "http://localhost:5173",           # Local Vite
+    "http://127.0.0.1:5173",           # Local Vite IP
+    "https://ai-journey-maker-stride.vercel.app",  # Production Vercel
+    os.getenv("VITE_FRONTEND_URL", "*") # Custom Env Var
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # Your Vite dev URL
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class CheckoutRequest(BaseModel):
-    plan: str
     user_id: str
+    plan: str
     success_url: str
     cancel_url: str
+
+@app.get("/api/health")
+def health():
+    if missing_vars:
+        return {"status": "error", "missing_env_vars": missing_vars}
+    return {"status": "ok", "message": "Backend is running and all env vars found"}
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
+
+    if not STRIPE_WEBHOOK_SECRET:
+         raise HTTPException(status_code=500, detail="Server config error: Missing Webhook Secret")
 
     try:
         event = stripe.Webhook.construct_event(
@@ -50,24 +80,24 @@ async def stripe_webhook(request: Request):
     # Handle the specific event
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        user_id = session.get('client_reference_id') # You must pass this in the initial checkout create
-        if user_id:
+        user_id = session.get('client_reference_id') 
+        if user_id and supabase_admin:
             supabase_admin.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
-        # Here you would call Supabase to set is_pro = True
-        # You can use the 'client_reference_id' or 'customer_email' to find the user
-        print(f"User {user_id} upgraded to Pro via Webhook.")
-        # TO DO: Add Supabase Python Admin SDK call here to update the user profile
+            print(f"User {user_id} upgraded to Pro via Webhook.")
+        else:
+            print("Webhook Error: User ID missing or DB not connected")
         
     elif event['type'] == 'customer.subscription.deleted':
-        # Handle cancellation
         subscription = event['data']['object']
         print(f"Subscription Canceled: {subscription['id']}")
-        # TO DO: Add Supabase call to set is_pro = False
 
     return {"status": "success"}    
 
-@app.post("/create-checkout-session")
+@app.post("/api/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
+    if missing_vars:
+        raise HTTPException(status_code=500, detail=f"Server Configuration Error. Missing vars: {missing_vars}")
+
     try:
         # Define your Stripe Price IDs from your dashboard
         price_id = STRIPE_PRICE_ID if request.plan == "monthly" else "price_456_yearly"
@@ -80,26 +110,22 @@ async def create_checkout_session(request: CheckoutRequest):
                 'quantity': 1,
             }],
             mode='subscription',
+            allow_promotion_codes=True,
             subscription_data={
                 'trial_period_days': 7, 
             },
-            # This ensures they must enter a card to start the trial
             payment_method_collection='always',
             success_url=request.success_url,
             cancel_url=request.cancel_url,
         )
         return {"sessionId": session.id}
     except stripe.error.StripeError as e:
-        # This will print the exact reason (e.g., "No such price: price_123_monthly") 
-        # to your Python terminal
-        print(f"CRITICAL ERROR: {str(e)}")
+        print(f"CRITICAL STRIPE ERROR: {str(e)}")
+        # Return strict string detail for frontend to display
         raise HTTPException(status_code=400, detail=str(e))
 
     except Exception as e:
         print(f"critical error: {str(e)}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -19,9 +19,17 @@ export const paymentService = {
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Backend Error Detail:", errorText);
-      throw new Error(errorData.detail || 'Failed to create session');
+      let errorMessage = 'Failed to create session';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+        console.error("Backend Error Detail:", errorData);
+      } catch (e) {
+        const errorText = await response.text();
+        console.error("Backend Error Text:", errorText);
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
