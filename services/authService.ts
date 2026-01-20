@@ -30,11 +30,16 @@ class AuthService {
   }
 
   private async mapUser(sbUser: any): Promise<User> {
-    const { data: profile } = await supabase
+    // Attempt to fetch profile. single() returns error if no rows found, but we ignore it and default values.
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('name, is_pro, avatar_url')
       .eq('id', sbUser.id)
       .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.warn("Error fetching profile:", error);
+    }
 
     return {
       id: sbUser.id,
@@ -60,21 +65,22 @@ class AuthService {
   async signIn(email: string, pass: string): Promise<User> {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
+    if (!data.user) throw new Error("No user returned from Supabase");
     return await this.mapUser(data.user);
   }
 
   async signUp(email: string, pass: string, name: string): Promise<User> {
-    const { data, error } = await supabase.auth.signUp({ 
-      email, 
+    const { data, error } = await supabase.auth.signUp({
+      email,
       password: pass,
       options: { data: { full_name: name } }
     });
     if (error) throw error;
     if (!data.user) throw new Error("Signup failed");
-    
+
     // Create initial profile
     await supabase.from('profiles').insert([{ id: data.user.id, name, is_pro: false }]);
-    
+
     return await this.mapUser(data.user);
   }
 
@@ -87,8 +93,8 @@ class AuthService {
   }
 
   async signOut() {
-    const {error} = await supabase.auth.signOut();
-    if(error) console.error("Supabse signout error:", error);
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("Supabse signout error:", error);
     this.currentUser = null;
     this.notify(); //this triggers the subscribe listener in App.tsx
   }

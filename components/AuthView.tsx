@@ -39,12 +39,13 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = await auth.signInWithGoogle();
-      onLogin(user);
+      await auth.signInWithGoogle();
+      // Note: This leads to a redirect, so we don't need to manually set the user or call onLogin.
+      // The onAuthStateChange listener in App.tsx will handle the user state when they return.
     } catch (err) {
+      console.error("Google Auth Error:", err);
       setError("Google authentication was interrupted. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only stop loading if there's an error and we didn't redirect
     }
   };
 

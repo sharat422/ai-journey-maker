@@ -112,7 +112,12 @@ const App: React.FC = () => {
       setJourneys([]);
       setView('dashboard');
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout error (non-fatal):", error);
+    } finally {
+      // Always reset local state
+      setUser(null);
+      setJourneys([]);
+      setView('dashboard');
     }
 
   };
