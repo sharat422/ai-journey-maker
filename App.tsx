@@ -181,6 +181,15 @@ const App: React.FC = () => {
     { id: 'slate', color: 'bg-[#334155]' },
   ];
 
+  // Logic for Trial Expiration
+  const TRIAL_DAYS = 7;
+  // Fallback to now if createdAt is missing, to avoid instant lockout on old schema users
+  const createdAtTime = user ? new Date(user.createdAt || new Date().toISOString()).getTime() : Date.now();
+  const daysSinceSignup = (Date.now() - createdAtTime) / (1000 * 60 * 60 * 24);
+  const isTrialExpired = daysSinceSignup >= TRIAL_DAYS;
+  const trialDaysLeft = Math.max(0, Math.ceil(TRIAL_DAYS - daysSinceSignup));
+  const isRestricted = !user?.isPro && isTrialExpired;
+
   return (
     <div className={`min-h-screen pb-12 flex flex-col transition-colors duration-300 ${theme === 'default' ? '' : `theme-${theme}`}`}>
       <nav className="sticky top-0 z-50 glass-morphism border-b border-slate-200">
@@ -223,7 +232,18 @@ const App: React.FC = () => {
               <button onClick={() => setIsSubscriptionModalOpen(true)} className="text-sm font-bold text-[var(--primary-text)] hidden sm:block">Go Pro</button>
             )}
             <button onClick={() => setView('dashboard')} className={`text-sm font-semibold ${view === 'dashboard' ? 'text-[var(--primary-text)] font-bold' : 'text-slate-500'}`}>Home</button>
-            <button onClick={() => setView('create')} className="px-4 py-2 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-slate-800 active:scale-95 transition-all">New Stride</button>
+            <button
+              onClick={() => {
+                if (isRestricted) {
+                  setIsSubscriptionModalOpen(true);
+                } else {
+                  setView('create');
+                }
+              }}
+              className={`px-4 py-2 text-white text-sm font-bold rounded-lg transition-all ${isRestricted ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 active:scale-95'}`}
+            >
+              New Stride
+            </button>
           </div>
         </div>
       </nav>
@@ -242,14 +262,42 @@ const App: React.FC = () => {
                 isPro={user.isPro}
                 userName={user.name || user.email.split('@')[0]}
                 onUpgrade={() => setIsSubscriptionModalOpen(true)}
-                onSelectJourney={(id) => { setSelectedJourneyId(id); setView('detail'); }}
-                onCreateNew={() => setView('create')}
+                onSelectJourney={(id) => {
+                  if (isRestricted) {
+                    // Optionally block viewing existing journeys too, but usually SaaS block CREATION heavily.
+                    // I will BLOCK accessing details for now as per "continue" requirement.
+                    setIsSubscriptionModalOpen(true);
+                  } else {
+                    setSelectedJourneyId(id);
+                    setView('detail');
+                  }
+                }}
+                onCreateNew={() => {
+                  if (isRestricted) {
+                    setIsSubscriptionModalOpen(true);
+                  } else {
+                    setView('create');
+                  }
+                }}
+                isTrialExpired={isTrialExpired}
+                trialDaysLeft={trialDaysLeft}
               />
             )}
-            {view === 'create' && <JourneyBuilder onJourneyCreated={handleCreateJourney} onCancel={() => setView('dashboard')} isPro={user.isPro} />}
-            {view === 'detail' && currentJourney && <JourneyDetail journey={currentJourney} onUpdateJourney={handleUpdateJourney} onBack={() => setView('dashboard')} />}
             {(view === 'privacy' || view === 'terms') && <LegalView type={view} onBack={() => setView('dashboard')} />}
+            {/* Hard Block usage of builders if restricted, even if state was manually set */}
+            {view === 'create' && !isRestricted && <JourneyBuilder onJourneyCreated={handleCreateJourney} onCancel={() => setView('dashboard')} isPro={user.isPro} />}
+            {view === 'detail' && currentJourney && !isRestricted && <JourneyDetail journey={currentJourney} onUpdateJourney={handleUpdateJourney} onBack={() => setView('dashboard')} />}
             {view === 'settings' && <SettingsView user={user} onBack={() => setView('dashboard')} />}
+
+            {/* Fallback forbidden view if they managed to get here */}
+            {(view === 'create' || view === 'detail') && isRestricted && (
+              <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+                <div className="text-4xl mb-4">🔒</div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Locked</h2>
+                <p className="text-slate-500 mb-6">Your trial has expired. Subscribe to continue.</p>
+                <button onClick={() => setIsSubscriptionModalOpen(true)} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Restore Access</button>
+              </div>
+            )}
           </>
         )}
       </main>

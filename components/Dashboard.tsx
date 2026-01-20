@@ -9,9 +9,13 @@ interface DashboardProps {
   isPro: boolean;
   onUpgrade: () => void;
   userName: string;
+  isTrialExpired: boolean;
+  trialDaysLeft: number;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCreateNew, isPro, onUpgrade, userName }) => {
+const Dashboard: React.FC<DashboardProps> = ({
+  journeys, onSelectJourney, onCreateNew, isPro, onUpgrade, userName, isTrialExpired, trialDaysLeft
+}) => {
   const stats: UserStats = {
     completedJourneys: journeys.filter(j => j.progress === 100).length,
     activeJourneys: journeys.filter(j => j.progress < 100).length,
@@ -29,6 +33,12 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
             {isPro && (
               <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded shadow-sm">PRO</span>
             )}
+            {!isPro && !isTrialExpired && (
+              <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                TRIAL: {trialDaysLeft} DAYS LEFT
+              </span>
+            )}
           </div>
           <p className="text-slate-500 mt-2">Ready to take another stride towards your goals?</p>
         </div>
@@ -45,6 +55,19 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
           ))}
         </div>
       </section>
+
+      {!isPro && isTrialExpired && (
+        <div className="bg-red-50 border border-red-100 rounded-3xl p-6 text-center animate-bounce-subtle">
+          <h3 className="text-xl font-bold text-red-600 mb-2">Free Trial Expired</h3>
+          <p className="text-slate-600 mb-4 max-w-lg mx-auto">Your 7-day trial has ended. To continue creating new journeys and accessing your history, please upgrade to Pro.</p>
+          <button
+            onClick={onUpgrade}
+            className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition"
+          >
+            Unlock Access
+          </button>
+        </div>
+      )}
 
       {!isPro && (
         <section className="bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-[var(--primary-shadow)] transition-all">

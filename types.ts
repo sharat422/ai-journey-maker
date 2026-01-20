@@ -34,6 +34,7 @@ export interface User {
   name?: string;
   isPro: boolean;
   avatar?: string;
+  createdAt: string; // ISO String
 }
 
 export interface UserStats {

@@ -46,7 +46,8 @@ class AuthService {
       email: sbUser.email || '',
       name: profile?.name || sbUser.user_metadata?.full_name || '',
       isPro: profile?.is_pro || false,
-      avatar: profile?.avatar_url || sbUser.user_metadata?.avatar_url || ''
+      avatar: profile?.avatar_url || sbUser.user_metadata?.avatar_url || '',
+      createdAt: sbUser.created_at || new Date().toISOString()
     };
   }
 
