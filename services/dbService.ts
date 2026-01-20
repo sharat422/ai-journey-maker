@@ -29,6 +29,8 @@ class StrideDB {
     //const validDate = journey.createdAt ? new Date(journey.createdAt) : new Date();
     const timestamp = journey.createdAt ? new Date(journey.createdAt).toISOString() : new Date().toISOString();
     const validId = journey.id.startsWith('j-') ? crypto.randomUUID() : journey.id;
+    if (!validId) throw new Error("Invalid Journey ID");
+    if (!journey.userId) throw new Error("Invalid User ID");
     const { error } = await supabase
       .from('journeys')
       .upsert({

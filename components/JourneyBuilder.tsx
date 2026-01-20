@@ -3,7 +3,7 @@ import { generateJourney } from '../services/geminiService';
 import { Journey } from '../types';
 
 interface JourneyBuilderProps {
-  onJourneyCreated: (journey: Journey) => void;
+  onJourneyCreated: (journey: Journey) => Promise<void> | void;
   onCancel: () => void;
   isPro: boolean;
 }
@@ -25,10 +25,13 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
     setError('');
     try {
       const journey = await generateJourney(goal, timeframe, selectedModel);
-      onJourneyCreated(journey);
+      await onJourneyCreated(journey);
     } catch (err) {
+      console.error(err);
       setError('Something went wrong. Please check your API key or connection.');
     } finally {
+      // If we successfully redirected, this might be unmounted, but that's okay.
+      // If we failed, we want to stop loading.
       setLoading(false);
     }
   };
@@ -50,11 +53,10 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
             <button
               type="button"
               onClick={() => setSelectedModel('gemini-3-flash-preview')}
-              className={`p-4 rounded-2xl border text-left transition-all ${
-                selectedModel === 'gemini-3-flash-preview'
-                  ? 'border-[var(--primary)] bg-[var(--primary-soft)] ring-2 ring-[var(--primary)] ring-inset'
-                  : 'border-slate-200 hover:border-[var(--primary-shadow)]'
-              }`}
+              className={`p-4 rounded-2xl border text-left transition-all ${selectedModel === 'gemini-3-flash-preview'
+                ? 'border-[var(--primary)] bg-[var(--primary-soft)] ring-2 ring-[var(--primary)] ring-inset'
+                : 'border-slate-200 hover:border-[var(--primary-shadow)]'
+                }`}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-bold text-slate-900">Gemini 3 Flash</span>
@@ -72,13 +74,12 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
                 type="button"
                 disabled={!isPro}
                 onClick={() => setSelectedModel('gemini-3-pro-preview')}
-                className={`w-full p-4 rounded-2xl border text-left transition-all h-full ${
-                  !isPro
-                    ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
-                    : selectedModel === 'gemini-3-pro-preview'
+                className={`w-full p-4 rounded-2xl border text-left transition-all h-full ${!isPro
+                  ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                  : selectedModel === 'gemini-3-pro-preview'
                     ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-500 ring-inset'
                     : 'border-slate-200 hover:border-amber-200'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className={`font-bold ${!isPro ? 'text-slate-400' : 'text-slate-900'}`}>Gemini 3 Pro</span>
@@ -158,13 +159,12 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
           <button
             type="submit"
             disabled={loading}
-            className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
-              loading 
-                ? 'bg-slate-400' 
-                : selectedModel === 'gemini-3-pro-preview' 
-                ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100' 
+            className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${loading
+              ? 'bg-slate-400'
+              : selectedModel === 'gemini-3-pro-preview'
+                ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100'
                 : 'bg-[var(--primary)] hover:opacity-90 shadow-[var(--primary-shadow)]'
-            }`}
+              }`}
           >
             {loading ? (
               <>

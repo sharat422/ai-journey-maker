@@ -6,7 +6,14 @@ import { Journey, Milestone, Step } from "../types";
 //console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
 const API_KEY = import.meta.env.VITE_API_KEY
 const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
-
+// A safe ID generator that works in all browsers
+function generateId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 const JOURNEY_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -55,12 +62,12 @@ export async function generateJourney(goal: string, timeframe: string, model: st
     const data = JSON.parse(response.text);
 
     const milestones: Milestone[] = data.milestones.map((m: any, mIdx: number) => ({
-      id: crypto.randomUUID(),
+      id: generateId(),
       title: m.title,
       description: m.description,
       estimatedDays: m.estimatedDays,
       steps: m.steps.map((s: string, sIdx: number) => ({
-        id: crypto.randomUUID(),
+        id: generateId(),
         title: s,
         completed: false
       }))
@@ -68,7 +75,7 @@ export async function generateJourney(goal: string, timeframe: string, model: st
 
     // Fix: Added userId to satisfy Journey interface; App.tsx will populate it with the correct ID.
     return {
-      id: crypto.randomUUID(),
+      id: generateId(),
       userId: '',
       title: data.title,
       description: data.description,

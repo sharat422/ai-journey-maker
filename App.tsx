@@ -118,7 +118,11 @@ const App: React.FC = () => {
   };
 
   const handleCreateJourney = async (newJourney: Journey) => {
-    if (!user || !user.id) { console.error("No authenticated user found."); return; }
+    if (!user || !user.id) {
+      console.error("No authenticated user found.");
+      alert("You must be logged in to save a journey.");
+      throw new Error("User not authenticated");
+    }
 
     // Ensure the journey object has the correct user_id from the current session
     // const journeyWithUser: Journey = { 
