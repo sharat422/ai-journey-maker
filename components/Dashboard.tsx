@@ -15,7 +15,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
   const stats: UserStats = {
     completedJourneys: journeys.filter(j => j.progress === 100).length,
     activeJourneys: journeys.filter(j => j.progress < 100).length,
-    totalStepsCompleted: journeys.reduce((acc, j) => 
+    totalStepsCompleted: journeys.reduce((acc, j) =>
       acc + j.milestones.reduce((mAcc, m) => mAcc + m.steps.filter(s => s.completed).length, 0), 0
     )
   };
@@ -49,10 +49,10 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
       {!isPro && (
         <section className="bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-[var(--primary-shadow)] transition-all">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Upgrade to Stride Pro</h2>
+            <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
             <p className="opacity-90 max-w-lg">Get access to Gemini 3 Pro roadmaps with deeper reasoning, unlimited journeys, and advanced coaching.</p>
           </div>
-          <button 
+          <button
             onClick={onUpgrade}
             className="px-8 py-3 bg-white text-[var(--primary-text)] font-bold rounded-2xl hover:scale-105 transition-all whitespace-nowrap shadow-lg"
           >
@@ -64,7 +64,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800">My Journeys</h2>
-          <button 
+          <button
             onClick={onCreateNew}
             className="px-5 py-2.5 bg-[var(--primary)] text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-lg shadow-[var(--primary-shadow)] flex items-center gap-2"
           >
@@ -81,7 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
             </div>
             <h3 className="text-xl font-bold text-slate-800">No journeys yet</h3>
             <p className="text-slate-500 mt-2 max-w-sm mx-auto">Create your first AI-powered roadmap to start tracking your progress and achieving your dreams.</p>
-            <button 
+            <button
               onClick={onCreateNew}
               className="mt-8 px-8 py-3 bg-[var(--primary)] text-white rounded-2xl font-bold hover:opacity-90 transition-all"
             >
@@ -91,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {journeys.map((journey) => (
-              <div 
+              <div
                 key={journey.id}
                 onClick={() => onSelectJourney(journey.id)}
                 className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:border-[var(--primary-shadow)] transition-all cursor-pointer relative overflow-hidden"
@@ -110,25 +110,25 @@ const Dashboard: React.FC<DashboardProps> = ({ journeys, onSelectJourney, onCrea
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 group-hover:text-[var(--primary-text)] transition-colors mb-2 line-clamp-1">{journey.title}</h3>
                 <p className="text-slate-500 text-sm line-clamp-2 h-10 mb-6">{journey.description}</p>
-                
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-slate-400">Progress</span>
                     <span className="font-bold text-slate-700">{journey.progress}%</span>
                   </div>
                   <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="bg-[var(--primary)] h-full rounded-full transition-all duration-1000"
                       style={{ width: `${journey.progress}%` }}
                     />
                   </div>
                 </div>
-                
+
                 <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                   <span>{journey.milestones.length} Milestones</span>
-                   <span className="group-hover:text-[var(--primary-text)] flex items-center gap-1">
-                     Details <span>→</span>
-                   </span>
+                  <span>{journey.milestones.length} Milestones</span>
+                  <span className="group-hover:text-[var(--primary-text)] flex items-center gap-1">
+                    Details <span>→</span>
+                  </span>
                 </div>
               </div>
             ))}

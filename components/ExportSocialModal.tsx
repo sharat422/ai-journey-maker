@@ -21,7 +21,7 @@ const ExportSocialModal: React.FC<ExportSocialModalProps> = ({ journey, isOpen, 
     setLoading(true);
     setError(null);
     setStatus("Initializing video generation...");
-   
+
     try {
       const url = await generateProgressVideo(journey, (s) => setStatus(s));
       setVideoUrl(url);
@@ -29,7 +29,7 @@ const ExportSocialModal: React.FC<ExportSocialModalProps> = ({ journey, isOpen, 
     } catch (err) {
       console.error(err);
       setError("Reel generation failed. Check your paid API key status.");
-      
+
     } finally {
       setLoading(false);
     }
@@ -39,7 +39,7 @@ const ExportSocialModal: React.FC<ExportSocialModalProps> = ({ journey, isOpen, 
     if (!videoUrl) return;
     const link = document.createElement('a');
     link.href = videoUrl;
-    link.download = `Stride_Reel_${journey.title.replace(/\s+/g, '_')}.mp4`;
+    link.download = `PrimePro_Reel_${journey.title.replace(/\s+/g, '_')}.mp4`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -51,7 +51,7 @@ const ExportSocialModal: React.FC<ExportSocialModalProps> = ({ journey, isOpen, 
         <div className="p-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h2 className="text-2xl font-black tracking-tight">Stride Reel Studio</h2>
+              <h2 className="text-2xl font-black tracking-tight">PrimePro Reel Studio</h2>
               <p className="text-slate-400 text-sm">Create a cinematic video of your progress.</p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded-full transition-colors">

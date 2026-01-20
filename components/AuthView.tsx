@@ -19,7 +19,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
+
     try {
       let user: User;
       if (isLogin) {
@@ -58,23 +58,23 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
       <div className="w-full max-w-md animate-fade-in z-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-[var(--primary-shadow)]">
-             <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-             </svg>
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Stride AI</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">PrimePro</h1>
           <p className="text-slate-500 mt-2 font-medium">Securely access your personal roadmaps.</p>
         </div>
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 border border-slate-100">
           <div className="flex p-1 bg-slate-100 rounded-2xl mb-8">
-            <button 
+            <button
               onClick={() => { setIsLogin(true); setError(null); }}
               className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${isLogin ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Sign In
             </button>
-            <button 
+            <button
               onClick={() => { setIsLogin(false); setError(null); }}
               className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all ${!isLogin ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
             >
@@ -92,8 +92,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             {!isLogin && (
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -102,11 +102,11 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                 />
               </div>
             )}
-            
+
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -117,8 +117,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
 
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -127,7 +127,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               />
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={isLoading}
               className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
@@ -149,17 +149,17 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             </div>
           </div>
 
-          <button 
+          <button
             type="button"
             onClick={handleGoogleAuth}
             disabled={isLoading}
             className="w-full py-3.5 border border-slate-200 rounded-2xl font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 48 48">
-              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.13-.45-4.63H24v9.3h12.98c-.58 2.85-2.2 5.25-4.63 6.85l7.46 5.78c4.36-4.01 6.98-9.92 6.98-16.3h.19z"/>
-              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/>
-              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.46-5.78c-2.19 1.47-4.99 2.34-8.43 2.34-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.13-.45-4.63H24v9.3h12.98c-.58 2.85-2.2 5.25-4.63 6.85l7.46 5.78c4.36-4.01 6.98-9.92 6.98-16.3h.19z" />
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z" />
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.46-5.78c-2.19 1.47-4.99 2.34-8.43 2.34-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
             </svg>
             Google
           </button>

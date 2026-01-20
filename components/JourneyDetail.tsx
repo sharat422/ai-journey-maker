@@ -16,7 +16,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
   const [activeReminderId, setActiveReminderId] = useState<string | null>(null);
   const [justCompletedStepId, setJustCompletedStepId] = useState<string | null>(null);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
-  
+
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -97,11 +97,11 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
 
   const handleMilestoneDrop = (targetIdx: number) => {
     if (draggedMilestoneIdx === null || draggedMilestoneIdx === targetIdx) return;
-    
+
     const updatedMilestones = [...journey.milestones];
     const [movedItem] = updatedMilestones.splice(draggedMilestoneIdx, 1);
     updatedMilestones.splice(targetIdx, 0, movedItem);
-    
+
     updateJourneyWithMilestones(updatedMilestones);
     setDraggedMilestoneIdx(null);
   };
@@ -132,7 +132,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
 
   const handleMilestoneStepDrop = (targetMIdx: number) => {
     if (!draggedStep || draggedStep.mIdx === targetMIdx) return;
-    
+
     const updatedMilestones = JSON.parse(JSON.stringify(journey.milestones)) as Milestone[];
     const [movedStep] = updatedMilestones[draggedStep.mIdx].steps.splice(draggedStep.sIdx, 1);
     updatedMilestones[targetMIdx].steps.push(movedStep);
@@ -144,7 +144,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
   const handleShare = async () => {
     const completedSteps = journey.milestones.reduce((acc, m) => acc + m.steps.filter(s => s.completed).length, 0);
     const totalSteps = journey.milestones.reduce((acc, m) => acc + m.steps.length, 0);
-    const shareText = `🚀 I'm making progress on my journey: "${journey.title}"!\n\n📈 Progress: ${journey.progress}%\n✅ ${completedSteps}/${totalSteps} steps completed.\n\nCreated with Stride AI.`;
+    const shareText = `🚀 I'm making progress on my journey: "${journey.title}"!\n\n📈 Progress: ${journey.progress}%\n✅ ${completedSteps}/${totalSteps} steps completed.\n\nCreated with PrimePro.`;
 
     if (navigator.share) {
       try {
@@ -193,7 +193,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
     <div className="max-w-5xl mx-auto space-y-8 pb-20 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         <div className="flex-1">
-          <button 
+          <button
             onClick={onBack}
             className="text-[var(--primary-text)] hover:opacity-80 font-medium mb-4 flex items-center gap-1 group transition-all"
           >
@@ -201,17 +201,16 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
           </button>
           <div className="flex flex-wrap items-center gap-4">
             <h1 className="text-4xl font-bold text-slate-900">{journey.title}</h1>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={handleShare}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
-                  shareStatus === 'success' 
-                    ? 'bg-green-50 border-green-200 text-green-600'
-                    : shareStatus === 'error'
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${shareStatus === 'success'
+                  ? 'bg-green-50 border-green-200 text-green-600'
+                  : shareStatus === 'error'
                     ? 'bg-red-50 border-red-200 text-red-600'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-[var(--primary)] hover:text-[var(--primary-text)]'
-                }`}
+                  }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -265,13 +264,12 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
             <h2 className="text-xl font-bold text-slate-800">Roadmap</h2>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Organize your strides</p>
           </div>
-          
+
           {journey.milestones.map((milestone, mIdx) => (
-            <div 
-              key={milestone.id} 
-              className={`bg-white rounded-2xl shadow-sm border transition-all duration-300 ${
-                draggedMilestoneIdx === mIdx ? 'opacity-40 border-[var(--primary)] scale-95 shadow-inner' : 'border-slate-100'
-              } ${draggedStep && draggedStep.mIdx !== mIdx ? 'border-dashed border-indigo-200 bg-indigo-50/10' : ''}`}
+            <div
+              key={milestone.id}
+              className={`bg-white rounded-2xl shadow-sm border transition-all duration-300 ${draggedMilestoneIdx === mIdx ? 'opacity-40 border-[var(--primary)] scale-95 shadow-inner' : 'border-slate-100'
+                } ${draggedStep && draggedStep.mIdx !== mIdx ? 'border-dashed border-indigo-200 bg-indigo-50/10' : ''}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 if (draggedMilestoneIdx !== null) e.currentTarget.style.borderColor = 'var(--primary)';
@@ -287,7 +285,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                 }
               }}
             >
-              <div 
+              <div
                 className="p-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/50 cursor-grab active:cursor-grabbing group"
                 draggable
                 onDragStart={() => handleMilestoneDragStart(mIdx)}
@@ -317,11 +315,10 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                 <p className="text-slate-600 text-sm italic mb-4">"{milestone.description}"</p>
                 <div className="space-y-3">
                   {milestone.steps.map((step, sIdx) => (
-                    <div 
-                      key={step.id} 
-                      className={`space-y-2 transition-all duration-300 ${
-                        draggedStep?.mIdx === mIdx && draggedStep?.sIdx === sIdx ? 'opacity-30' : ''
-                      }`}
+                    <div
+                      key={step.id}
+                      className={`space-y-2 transition-all duration-300 ${draggedStep?.mIdx === mIdx && draggedStep?.sIdx === sIdx ? 'opacity-30' : ''
+                        }`}
                       draggable={!step.completed}
                       onDragStart={(e) => handleStepDragStart(mIdx, sIdx, e)}
                       onDragOver={(e) => {
@@ -345,14 +342,12 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                         }
                       }}
                     >
-                      <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all group ${
-                          step.completed 
-                            ? 'bg-green-50/50 border-green-100 text-slate-400' 
-                            : 'bg-white border-slate-100 hover:border-[var(--primary-shadow)]'
-                        } ${!step.completed ? 'cursor-grab active:cursor-grabbing' : ''} ${
-                          justCompletedStepId === step.id ? 'animate-step-complete' : ''
+                      <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all group ${step.completed
+                        ? 'bg-green-50/50 border-green-100 text-slate-400'
+                        : 'bg-white border-slate-100 hover:border-[var(--primary-shadow)]'
+                        } ${!step.completed ? 'cursor-grab active:cursor-grabbing' : ''} ${justCompletedStepId === step.id ? 'animate-step-complete' : ''
                         }`}>
-                        
+
                         {!step.completed && (
                           <div className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +356,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                           </div>
                         )}
 
-                        <input 
+                        <input
                           type="checkbox"
                           checked={step.completed}
                           onChange={() => toggleStep(milestone.id, step.id)}
@@ -395,42 +390,42 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                           </button>
                         )}
                       </div>
-                      
+
                       {activeReminderId === step.id && (
                         <div className="ml-8 p-5 bg-white rounded-2xl border-2 border-[var(--primary-soft)] shadow-xl animate-fade-in space-y-4">
                           <div className="flex justify-between items-center">
                             <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Schedule Reminder</span>
                             <button onClick={() => setActiveReminderId(null)} className="text-slate-400 hover:text-slate-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
                             </button>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-2">
-                            <button 
-                                onClick={() => setReminder(milestone.id, step.id, getQuickPresetTime(1, 9))}
-                                className="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 rounded-xl hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] hover:border-[var(--primary-shadow)] transition-all"
+                            <button
+                              onClick={() => setReminder(milestone.id, step.id, getQuickPresetTime(1, 9))}
+                              className="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 rounded-xl hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] hover:border-[var(--primary-shadow)] transition-all"
                             >
-                                ☀️ Tomorrow 9am
+                              ☀️ Tomorrow 9am
                             </button>
-                            <button 
-                                onClick={() => setReminder(milestone.id, step.id, getQuickPresetTime(3, 10))}
-                                className="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 rounded-xl hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] hover:border-[var(--primary-shadow)] transition-all"
+                            <button
+                              onClick={() => setReminder(milestone.id, step.id, getQuickPresetTime(3, 10))}
+                              className="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 rounded-xl hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] hover:border-[var(--primary-shadow)] transition-all"
                             >
-                                📅 In 3 Days
+                              📅 In 3 Days
                             </button>
-                            <button 
-                                onClick={() => setReminder(milestone.id, step.id, getQuickPresetTime(7, 9))}
-                                className="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 rounded-xl hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] hover:border-[var(--primary-shadow)] transition-all"
+                            <button
+                              onClick={() => setReminder(milestone.id, step.id, getQuickPresetTime(7, 9))}
+                              className="px-3 py-2 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-100 rounded-xl hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] hover:border-[var(--primary-shadow)] transition-all"
                             >
-                                🚀 In 1 Week
+                              🚀 In 1 Week
                             </button>
-                            <button 
-                                onClick={() => setReminder(milestone.id, step.id, '')}
-                                className="px-3 py-2 text-xs font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-all"
+                            <button
+                              onClick={() => setReminder(milestone.id, step.id, '')}
+                              className="px-3 py-2 text-xs font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-all"
                             >
-                                🗑️ Remove
+                              🗑️ Remove
                             </button>
                           </div>
                         </div>
@@ -451,14 +446,14 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorProg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={primaryColor} stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor={primaryColor} stopOpacity={0}/>
+                      <stop offset="5%" stopColor={primaryColor} stopOpacity={0.1} />
+                      <stop offset="95%" stopColor={primaryColor} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" hide />
                   <YAxis hide domain={[0, 100]} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
                   <Area type="monotone" dataKey="progress" stroke={primaryColor} strokeWidth={3} fillOpacity={1} fill="url(#colorProg)" />
@@ -469,28 +464,28 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
 
           <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-[var(--primary-soft)] overflow-hidden relative">
             <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <h3 className="font-bold text-slate-800">AI Strategy Room</h3>
-                </div>
-                <button 
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing}
-                  className="text-[10px] font-black uppercase tracking-widest text-[var(--primary-text)] hover:opacity-80 transition-opacity flex items-center gap-1 disabled:opacity-50"
-                >
-                  {isAnalyzing ? 'Analyzing...' : 'Refresh Insights'}
-                </button>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h3 className="font-bold text-slate-800">AI Strategy Room</h3>
+              </div>
+              <button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
+                className="text-[10px] font-black uppercase tracking-widest text-[var(--primary-text)] hover:opacity-80 transition-opacity flex items-center gap-1 disabled:opacity-50"
+              >
+                {isAnalyzing ? 'Analyzing...' : 'Refresh Insights'}
+              </button>
             </div>
 
             {isAnalyzing ? (
               <div className="space-y-4 animate-pulse">
                 {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="flex gap-3">
-                        <div className="w-5 h-5 bg-slate-100 rounded shrink-0"></div>
-                        <div className="space-y-2 flex-1">
-                            <div className="h-3 bg-slate-100 rounded w-full"></div>
-                        </div>
+                  <div key={i} className="flex gap-3">
+                    <div className="w-5 h-5 bg-slate-100 rounded shrink-0"></div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3 bg-slate-100 rounded w-full"></div>
                     </div>
+                  </div>
                 ))}
               </div>
             ) : aiInsights.length > 0 ? (
@@ -498,22 +493,22 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
                 {aiInsights.map((insight, i) => (
                   <div key={i} className="flex gap-3 animate-fade-in group">
                     <div className="mt-1 shrink-0 w-8 h-8 rounded-xl bg-white border border-slate-100 text-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                        {insight.icon}
+                      {insight.icon}
                     </div>
                     <div className="flex-1">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">
-                            {insight.type}
-                        </span>
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">
+                        {insight.type}
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         {insight.text}
-                        </p>
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-6">
-                <button 
+                <button
                   onClick={handleAnalyze}
                   className="px-6 py-2.5 bg-[var(--primary)] text-white text-[10px] font-bold rounded-xl shadow-lg shadow-[var(--primary-shadow)] hover:scale-105 transition-all"
                 >
@@ -530,7 +525,7 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
               </svg>
             </div>
             <h3 className="font-bold text-xl mb-2 flex items-center gap-2">
-                <span className="text-[var(--primary-soft)] text-lg">💡</span> Coaching Note
+              <span className="text-[var(--primary-soft)] text-lg">💡</span> Coaching Note
             </h3>
             <p className="text-slate-300 text-sm italic leading-relaxed">
               "Every stride counts. Stay consistent and let AI navigate the complexity while you focus on the action."
@@ -539,9 +534,9 @@ const JourneyDetail: React.FC<JourneyDetailProps> = ({ journey, onUpdateJourney,
         </div>
       </div>
 
-      <ExportSocialModal 
-        isOpen={isSocialModalOpen} 
-        onClose={() => setIsSocialModalOpen(false)} 
+      <ExportSocialModal
+        isOpen={isSocialModalOpen}
+        onClose={() => setIsSocialModalOpen(false)}
         journey={journey}
       />
     </div>
