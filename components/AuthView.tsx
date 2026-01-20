@@ -150,7 +150,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             </div>
           </div>
 
-          <button
+          {/* <button
             type="button"
             onClick={handleGoogleAuth}
             disabled={isLoading}
@@ -163,7 +163,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.46-5.78c-2.19 1.47-4.99 2.34-8.43 2.34-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
             </svg>
             Google
-          </button>
+          </button> */}
         </div>
 
         <p className="text-center text-[10px] text-slate-400 mt-10 uppercase tracking-widest font-black">
