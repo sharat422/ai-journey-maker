@@ -35,7 +35,7 @@ const JOURNEY_SCHEMA = {
 
 export async function generateJourney(goal: string, timeframe: string, model: string): Promise<Journey> {
   const isProModel = model === "gemini-3-pro-preview";
-  
+
   const prompt = `Create a detailed learning roadmap for the following goal: "${goal}". 
   The target timeframe is "${timeframe}". 
   Break it down into logical milestones with actionable steps.
@@ -53,14 +53,14 @@ export async function generateJourney(goal: string, timeframe: string, model: st
     });
 
     const data = JSON.parse(response.text);
-    
+
     const milestones: Milestone[] = data.milestones.map((m: any, mIdx: number) => ({
-      id: `m-${Date.now()}-${mIdx}`,
+      id: crypto.randomUUID(),
       title: m.title,
       description: m.description,
       estimatedDays: m.estimatedDays,
       steps: m.steps.map((s: string, sIdx: number) => ({
-        id: `s-${Date.now()}-${mIdx}-${sIdx}`,
+        id: crypto.randomUUID(),
         title: s,
         completed: false
       }))
@@ -69,7 +69,7 @@ export async function generateJourney(goal: string, timeframe: string, model: st
     // Fix: Added userId to satisfy Journey interface; App.tsx will populate it with the correct ID.
     return {
       id: crypto.randomUUID(),
-      userId: '', 
+      userId: '',
       title: data.title,
       description: data.description,
       category: data.category,
@@ -92,7 +92,7 @@ export interface AIInsight {
 export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsight[]> {
   const completedSteps = journey.milestones.reduce((acc, m) => acc + m.steps.filter(s => s.completed).length, 0);
   const totalSteps = journey.milestones.reduce((acc, m) => acc + m.steps.length, 0);
-  
+
   const progressData = journey.milestones.map(m => ({
     title: m.title,
     completed: m.steps.filter(s => s.completed).length,
@@ -123,7 +123,7 @@ export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsigh
           properties: {
             insights: {
               type: Type.ARRAY,
-              items: { 
+              items: {
                 type: Type.OBJECT,
                 properties: {
                   type: { type: Type.STRING },
@@ -154,7 +154,7 @@ export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsigh
 export async function generateProgressVideo(journey: Journey, onStatusUpdate: (status: string) => void): Promise<string> {
   // Always create a new instance right before making an API call for Veo models to ensure the latest API key is used
   const videoAi = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-  
+
   const videoPrompt = `A dynamic, cinematic vertical social media reel for TikTok/Instagram. 
   Theme: Personal growth and progress for "${journey.title}". 
   The video shows an abstract 3D path or mountain being climbed, with glowing neon markers. 
@@ -163,7 +163,7 @@ export async function generateProgressVideo(journey: Journey, onStatusUpdate: (s
   Aspect ratio 9:16. Vibrant colors matching ${journey.category}.`;
 
   onStatusUpdate("Initializing Video AI...");
-  
+
   try {
     let operation = await videoAi.models.generateVideos({
       model: 'veo-3.1-fast-generate-preview',
@@ -188,12 +188,12 @@ export async function generateProgressVideo(journey: Journey, onStatusUpdate: (s
         "Color grading for maximum impact..."
       ];
       onStatusUpdate(statuses[Math.floor(Math.random() * statuses.length)]);
-      operation = await videoAi.operations.getVideosOperation({operation: operation});
+      operation = await videoAi.operations.getVideosOperation({ operation: operation });
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
     if (!downloadLink) throw new Error("Video generation failed");
-    
+
     // Append API key as required for fetching the MP4 bytes
     return `${downloadLink}&key=${process.env.API_KEY}`;
   } catch (err) {

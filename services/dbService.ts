@@ -24,29 +24,29 @@ class StrideDB {
     }));
   }
 
-async saveJourney(journey: Journey): Promise<void> {
-  // Ensure we have a valid timestamp before calling toISOString()
-  //const validDate = journey.createdAt ? new Date(journey.createdAt) : new Date();
-  const timestamp = journey.createdAt ? new Date(journey.createdAt).toISOString() : new Date().toISOString();
- 
-  const { error } = await supabase
-    .from('journeys')
-    .upsert({
-      id: journey.id,             // Ensure this is not null/undefined
-      user_id: journey.userId,   // Mapped from camelCase to snake_case
-      title: journey.title,
-      description: journey.description,
-      category: journey.category,
-      progress: journey.progress,
-      milestones: journey.milestones,
-      created_at:timestamp
-    }, { onConflict: 'id' });     // Explicitly handle the ID conflict
+  async saveJourney(journey: Journey): Promise<void> {
+    // Ensure we have a valid timestamp before calling toISOString()
+    //const validDate = journey.createdAt ? new Date(journey.createdAt) : new Date();
+    const timestamp = journey.createdAt ? new Date(journey.createdAt).toISOString() : new Date().toISOString();
+    const validId = journey.id.startsWith('j-') ? crypto.randomUUID() : journey.id;
+    const { error } = await supabase
+      .from('journeys')
+      .upsert({
+        id: validId,             // Ensure this is not null/undefined
+        user_id: journey.userId,   // Mapped from camelCase to snake_case
+        title: journey.title,
+        description: journey.description,
+        category: journey.category,
+        progress: journey.progress,
+        milestones: journey.milestones,
+        created_at: timestamp
+      }, { onConflict: 'id' });     // Explicitly handle the ID conflict
 
-  if (error) {
-    console.error("Supabase Save Error:", error);
-    throw error;
+    if (error) {
+      console.error("Supabase Save Error:", error);
+      throw error;
+    }
   }
-}
 
   async setProStatus(userId: string, isPro: boolean): Promise<void> {
     const { error } = await supabase

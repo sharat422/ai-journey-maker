@@ -23,23 +23,23 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
     setError(null);
     const user = auth.getCurrentUser();
     if (!user) {
-    setError("You must be logged in to subscribe.");
-    setLoading(false); // Stop loading if no user
-    return;
-  }
+      setError("You must be logged in to subscribe.");
+      setLoading(false); // Stop loading if no user
+      return;
+    }
     setStep('processing');
-   
+
     try {
       // 1. Get the session ID from your FastAPI backend
-    const sessionId = await paymentService.createCheckoutSession(user.id, billingCycle);
-    
-    if (!sessionId) {
-      throw new Error("No session ID returned from the server.");
-    }
-    // 3. This opens the Stripe page
+      const sessionId = await paymentService.createCheckoutSession(user.id, billingCycle);
+
+      if (!sessionId) {
+        throw new Error("No session ID returned from the server.");
+      }
+      // 3. This opens the Stripe page
       await paymentService.redirectToCheckout(sessionId);
 
-      } catch (err: any) {
+    } catch (err: any) {
       console.error("Payment failed:", err);
       setError("Stripe Checkout failed to load. Please try again.");
       setStep('details');
@@ -58,7 +58,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
           <div className="p-8">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Stride Pro</h2>
+                <h2 className="text-2xl font-bold text-slate-900"> Pro</h2>
                 <p className="text-slate-500 text-sm font-medium">Elevate your growth experience</p>
               </div>
               <div className="flex flex-col items-end">
@@ -69,13 +69,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
             </div>
 
             <div className="flex p-1 bg-slate-100 rounded-xl mb-8">
-              <button 
+              <button
                 onClick={() => setBillingCycle('monthly')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${billingCycle === 'monthly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Monthly {billingCycle === 'monthly' && '✓'}
               </button>
-              <button 
+              <button
                 onClick={() => setBillingCycle('yearly')}
                 className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${billingCycle === 'yearly' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
               >
@@ -108,11 +108,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               <button onClick={handlePay} className="flex-1 py-3 font-bold text-white text-sm bg-indigo-600 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
                 Pay Securely
               </button>
-              
+
             </div>
             <h3 className="text-center text-xs text-slate-400 mt-2">
-                Start 7-Day Free Trial,  Cancel anytime.
-              </h3>
+              Start 7-Day Free Trial,  Cancel anytime.
+            </h3>
             <p className="text-center text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-black">
               SECURE STRIPE CHECKOUT
             </p>
@@ -138,7 +138,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
             </div>
             <div>
               <h3 className="text-xl font-bold text-slate-900">Payment Successful</h3>
-              <p className="text-slate-500 text-sm font-medium">Welcome to Stride Pro.</p>
+              <p className="text-slate-500 text-sm font-medium">Welcome to Pro.</p>
             </div>
           </div>
         )}
