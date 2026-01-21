@@ -3,8 +3,10 @@ import { Journey, Milestone, Step } from "../types";
 
 // Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 //console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
+const API_KEY = import.meta.env.VITE_API_KEY || (import.meta as any).env.VITE_API_KEY;
+// Removed global genAI instance to prevent state issues
+// const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
+
 // A safe ID generator that works in all browsers
 function generateId() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -40,6 +42,8 @@ const JOURNEY_SCHEMA = {
 };
 
 export async function generateJourney(goal: string, timeframe: string, model: string): Promise<Journey> {
+  // Create a new instance for each request to ensure fresh state
+  const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
   const isProModel = model === "gemini-3-pro-preview";
 
   const prompt = `Create a detailed learning roadmap for the following goal: "${goal}". 
@@ -96,6 +100,8 @@ export interface AIInsight {
 }
 
 export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsight[]> {
+  const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
+
   const completedSteps = journey.milestones.reduce((acc, m) => acc + m.steps.filter(s => s.completed).length, 0);
   const totalSteps = journey.milestones.reduce((acc, m) => acc + m.steps.length, 0);
 
@@ -159,7 +165,7 @@ export async function analyzeJourneyProgress(journey: Journey): Promise<AIInsigh
 
 export async function generateProgressVideo(journey: Journey, onStatusUpdate: (status: string) => void): Promise<string> {
   // Always create a new instance right before making an API call for Veo models to ensure the latest API key is used
-  const videoAi = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  const videoAi = new GoogleGenAI({ apiKey: API_KEY as string });
 
   const videoPrompt = `A dynamic, cinematic vertical social media reel for TikTok/Instagram. 
   Theme: Personal growth and progress for "${journey.title}". 
@@ -201,7 +207,7 @@ export async function generateProgressVideo(journey: Journey, onStatusUpdate: (s
     if (!downloadLink) throw new Error("Video generation failed");
 
     // Append API key as required for fetching the MP4 bytes
-    return `${downloadLink}&key=${process.env.API_KEY}`;
+    return `${downloadLink}&key=${API_KEY}`;
   } catch (err) {
     console.error("Veo Error:", err);
     throw err;
