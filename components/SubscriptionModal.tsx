@@ -48,7 +48,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  const currentPrice = billingCycle === 'monthly' ? '$6.99' : '$49.99';
+  const currentPrice = billingCycle === 'monthly' ? '$6.99' : '$69.99';
   const currentInterval = billingCycle === 'monthly' ? '/ mo' : '/ year';
 
   return (
@@ -87,8 +87,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
               {[
                 "Advanced AI structural reasoning",
                 "Unlimited custom roadmaps",
-                "Priority cloud processing",
-                "HD Cinematic video exports"
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm text-slate-600 font-medium">
                   <svg className="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
