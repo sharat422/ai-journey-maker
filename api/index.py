@@ -19,7 +19,8 @@ missing_vars = [var for var in required_vars if not os.getenv(var)]
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID_MONTHLY")
+STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")
+STRIPE_PRICE_ID_YEARLY = os.getenv("STRIPE_PRICE_ID_YEARLY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -100,7 +101,7 @@ async def create_checkout_session(request: CheckoutRequest):
 
     try:
         # Define your Stripe Price IDs from your dashboard
-        price_id = STRIPE_PRICE_ID if request.plan == "monthly" else "price_456_yearly"
+        price_id = STRIPE_PRICE_ID_MONTHLY if request.plan == "monthly" else STRIPE_PRICE_ID_YEARLY
         
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
