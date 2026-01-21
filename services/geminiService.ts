@@ -4,7 +4,7 @@ import { Journey, Milestone, Step } from "../types";
 
 // Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 //console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
-const API_KEY = import.meta.env.VITE_API_KEY
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenAI({ apiKey: API_KEY as string });
 // A safe ID generator that works in all browsers
 function generateId() {
