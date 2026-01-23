@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { paymentService } from '../services/paymentService';
-import { auth } from '../services/authService';
+import { paymentService } from '../../services/paymentService';
+import { auth } from '../../services/authService';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
