@@ -21,13 +21,17 @@ export const paymentService = {
     if (!response.ok) {
       let errorMessage = 'Failed to create session';
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.detail || errorData.message || errorMessage;
-        console.error("Backend Error Detail:", errorData);
-      } catch (e) {
         const errorText = await response.text();
-        console.error("Backend Error Text:", errorText);
-        errorMessage = errorText || errorMessage;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+          console.error("Backend Error Detail:", errorData);
+        } catch (parseError) {
+          console.error("Backend Error Text:", errorText);
+          errorMessage = errorText || errorMessage;
+        }
+      } catch (e) {
+        console.error("Failed to read error response", e);
       }
       throw new Error(errorMessage);
     }
