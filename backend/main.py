@@ -22,7 +22,11 @@ app = FastAPI()
 # Enable CORS so your React app can talk to this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # Your Vite dev URL
+    allow_origins=[
+        "http://localhost:5173",  # Local dev
+        "https://www.primepro.co",
+        "https://primepro.co",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -126,7 +130,7 @@ async def use_streak_freeze(request: UnlockRewardRequest):
          raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/webhook")
+@app.post("/api/webhook")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -175,7 +179,7 @@ async def stripe_webhook(request: Request):
 
     return {"status": "success"}    
 
-@app.post("/create-checkout-session")
+@app.post("/api/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
         price_id = None

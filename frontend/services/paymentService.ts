@@ -7,7 +7,8 @@ const BACKEND_URL = (import.meta as any).env.VITE_BACKEND_URL;
 
 export const paymentService = {
   async createCheckoutSession(userId: string, plan: 'monthly' | 'yearly' | 'streak_freeze' | 'extra_goal') {
-    const response = await fetch('/api/create-checkout-session', {
+    const url = BACKEND_URL ? `${BACKEND_URL}/api/create-checkout-session` : '/api/create-checkout-session';
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
