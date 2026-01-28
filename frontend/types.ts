@@ -28,6 +28,7 @@ export interface Journey {
   progress: number; // 0 to 100
 }
 
+
 export interface User {
   id: string;
   email: string;
@@ -35,6 +36,17 @@ export interface User {
   isPro: boolean;
   avatar?: string;
   createdAt: string; // ISO String
+  credits?: number; // New monetization field
+  extraGoalSlots?: number;
+  streakFreezes?: number; // v2
+}
+
+export interface UserStreak {
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: string; // YYYY-MM-DD
+  updated_at: string;
 }
 
 export interface UserStats {
@@ -42,3 +54,4 @@ export interface UserStats {
   activeJourneys: number;
   totalStepsCompleted: number;
 }
+

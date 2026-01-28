@@ -6,7 +6,7 @@ const STRIPE_PUBLIC_KEY = (import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY;
 const BACKEND_URL = (import.meta as any).env.VITE_BACKEND_URL;
 
 export const paymentService = {
-  async createCheckoutSession(userId: string, plan: 'monthly' | 'yearly') {
+  async createCheckoutSession(userId: string, plan: 'monthly' | 'yearly' | 'streak_freeze' | 'extra_goal') {
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

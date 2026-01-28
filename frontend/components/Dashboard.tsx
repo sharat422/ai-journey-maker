@@ -11,10 +11,12 @@ interface DashboardProps {
   userName: string;
   isTrialExpired: boolean;
   trialDaysLeft: number;
+  streak: number;
+  onShare: (journeyId: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
-  journeys, onSelectJourney, onCreateNew, isPro, onUpgrade, userName, isTrialExpired, trialDaysLeft
+  journeys, onSelectJourney, onCreateNew, isPro, onUpgrade, userName, isTrialExpired, trialDaysLeft, streak = 0, onShare
 }) => {
   const stats: UserStats = {
     completedJourneys: journeys.filter(j => j.progress === 100).length,
@@ -39,6 +41,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                 TRIAL: {trialDaysLeft} DAYS LEFT
               </span>
             )}
+            <div className="flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded border border-orange-100" title="Current Day Streak">
+              <span className="text-xl">🔥</span>
+              <span className="text-sm font-bold text-orange-600">{streak} Day Streak</span>
+            </div>
           </div>
           <p className="text-slate-500 mt-2">Ready to take another stride towards your goals?</p>
         </div>
@@ -79,7 +85,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             onClick={onUpgrade}
             className="px-8 py-3 bg-white text-[var(--primary-text)] font-bold rounded-2xl hover:scale-105 transition-all whitespace-nowrap shadow-lg"
           >
-            Go Pro for $6.99/mo
+            Go Pro for $4.99/mo
           </button>
         </section>
       )}
@@ -131,7 +137,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </span>
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 group-hover:text-[var(--primary-text)] transition-colors mb-2 line-clamp-1">{journey.title}</h3>
+
+                {/* Share Button (Overlay or nearby) */}
+                <div className="absolute top-4 right-4 z-10">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShare(journey.id);
+                    }}
+                    className="p-2 bg-white/90 hover:bg-white rounded-full shadow-sm text-slate-400 hover:text-[var(--primary)] transition-all"
+                    title="Share Progress"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                  </button>
+                </div>
+
+                <h3 className="text-xl font-bold text-slate-800 group-hover:text-[var(--primary-text)] transition-colors mb-2 line-clamp-1 pr-8">{journey.title}</h3>
                 <p className="text-slate-500 text-sm line-clamp-2 h-10 mb-6">{journey.description}</p>
 
                 <div className="space-y-2">

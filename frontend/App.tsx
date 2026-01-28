@@ -10,6 +10,10 @@ import SettingsView from './components/SettingsView';
 import { db } from './services/dbService';
 import { auth } from './services/authService';
 
+import { StreakService } from './services/StreakService';
+import MonetizationModal from './components/MonetizationModal';
+import GrowthSharingModal from './components/GrowthSharingModal';
+
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [journeys, setJourneys] = useState<Journey[]>([]);
@@ -19,6 +23,13 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<AppTheme>((localStorage.getItem('stride_theme') as AppTheme) || 'default');
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+
+  // Monetization State
+  const [streak, setStreak] = useState(0);
+  const [monetizationModal, setMonetizationModal] = useState<{ isOpen: boolean, mode: 'value_unlock' | 'limit_reached' | 'premium_upgrade', msg?: string }>({
+    isOpen: false, mode: 'value_unlock'
+  });
+  const [growthModal, setGrowthModal] = useState<{ isOpen: boolean, journey: Journey | null }>({ isOpen: false, journey: null });
 
   const firedReminders = useRef<Set<string>>(new Set());
 
@@ -73,6 +84,24 @@ const App: React.FC = () => {
       };
 
       finalizeUpgrade();
+    }
+  }, [user]);
+
+  // Streak Check & Monetization Trigger
+  useEffect(() => {
+    if (user) {
+      StreakService.checkStreak(user.id).then(data => {
+        if (data.status === 'success') {
+          setStreak(data.current_streak);
+          // Trigger Reward on Day 3 and 5
+          if (data.current_streak === 3 || data.current_streak === 5) {
+            setMonetizationModal({
+              isOpen: true,
+              mode: 'value_unlock',
+            });
+          }
+        }
+      });
     }
   }, [user]);
   // Notifications logic remains robust
@@ -273,6 +302,15 @@ const App: React.FC = () => {
                   }
                 }}
                 onCreateNew={() => {
+                  const activeCount = journeys.filter(j => j.progress < 100).length;
+                  if (!user?.isPro && activeCount >= 2) {
+                    setMonetizationModal({
+                      isOpen: true,
+                      mode: 'limit_reached',
+                    });
+                    return;
+                  }
+
                   if (isRestricted) {
                     setIsSubscriptionModalOpen(true);
                   } else {
@@ -281,6 +319,11 @@ const App: React.FC = () => {
                 }}
                 isTrialExpired={isTrialExpired}
                 trialDaysLeft={trialDaysLeft}
+                streak={streak}
+                onShare={(journeyId) => {
+                  const j = journeys.find(jp => jp.id === journeyId);
+                  if (j) setGrowthModal({ isOpen: true, journey: j });
+                }}
               />
             )}
             {(view === 'privacy' || view === 'terms') && <LegalView type={view} onBack={() => setView('dashboard')} />}
@@ -303,6 +346,31 @@ const App: React.FC = () => {
       </main>
 
       <SubscriptionModal isOpen={isSubscriptionModalOpen} onClose={() => setIsSubscriptionModalOpen(false)} onSuccess={handleUpgradeSuccess} />
+
+      <MonetizationModal
+        isOpen={monetizationModal.isOpen}
+        onClose={() => setMonetizationModal(prev => ({ ...prev, isOpen: false }))}
+        mode={monetizationModal.mode}
+        streakDays={streak}
+        onActionComplete={(action) => {
+          console.log("Monetization Action:", action);
+          if (action === 'sub_monthly' || action === 'sub_yearly') {
+            setMonetizationModal(prev => ({ ...prev, isOpen: false }));
+            setIsSubscriptionModalOpen(true);
+          }
+          // e.g. handle 'buy_freeze' here
+        }}
+      />
+
+      {growthModal.journey && user && (
+        <GrowthSharingModal
+          isOpen={growthModal.isOpen}
+          onClose={() => setGrowthModal({ ...growthModal, isOpen: false })}
+          journey={growthModal.journey}
+          user={user}
+          streak={streak}
+        />
+      )}
 
       <footer className="mt-20 border-t border-slate-100 py-12">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">

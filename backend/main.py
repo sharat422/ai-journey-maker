@@ -28,11 +28,103 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+from datetime import date, datetime, timedelta
+
+# ... imports ...
+
+# Monetization Constants
+STREAK_REWARD_DAY_1 = 3
+STREAK_REWARD_DAY_2 = 5
+MICRO_PURCHASE_PRICE_ID = "price_H5gg..." # Placeholder, needs env var
+
 class CheckoutRequest(BaseModel):
     plan: str
     user_id: str
     success_url: str
     cancel_url: str
+
+class StreakCheckRequest(BaseModel):
+    user_id: str
+    timezone_offset: int = 0 # Minutes offset from UTC
+
+class UnlockRewardRequest(BaseModel):
+    user_id: str
+    reward_type: str # 'video_ad', 'share', 'micro_purchase'
+
+
+@app.post("/api/streak/check")
+async def check_streak(request: StreakCheckRequest):
+    try:
+        today = date.today() # Simplified timezone
+        
+        response = supabase_admin.table("user_streaks").select("*").eq("user_id", request.user_id).execute()
+        streak_data = response.data[0] if response.data else None
+        
+        current_streak = 0
+        longest_streak = 0
+        last_activity = None
+        
+        if streak_data:
+            current_streak = streak_data['current_streak']
+            longest_streak = streak_data['longest_streak']
+            last_activity = datetime.strptime(streak_data['last_activity_date'], '%Y-%m-%d').date() if streak_data['last_activity_date'] else None
+        
+        updated_streak = current_streak
+        
+        if last_activity == today:
+             pass
+        elif last_activity == today - timedelta(days=1):
+            updated_streak += 1
+        else:
+            # Streak broken! Check for automatic freeze usage?
+            # For now, we just reset, frontend can prompt to "Restore" via Micro-purchase
+            updated_streak = 1
+            
+        new_longest = max(longest_streak, updated_streak)
+        
+        upsert_data = {
+            "user_id": request.user_id,
+            "current_streak": updated_streak,
+            "longest_streak": new_longest,
+            "last_activity_date": today.isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }
+        
+        supabase_admin.table("user_streaks").upsert(upsert_data).execute()
+        
+        return {
+            "status": "success", 
+            "current_streak": updated_streak, 
+            "longest_streak": new_longest
+        }
+        
+    except Exception as e:
+        print(f"Streak Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/use-streak-freeze")
+async def use_streak_freeze(request: UnlockRewardRequest):
+    # Request body re-used generic 'UnlockRewardRequest' or make new 'ActionRequest'
+    try:
+        # Check if user has freezes
+        profile = supabase_admin.table("profiles").select("streak_freezes_available").eq("id", request.user_id).execute()
+        if not profile.data or profile.data[0]['streak_freezes_available'] < 1:
+            raise HTTPException(status_code=400, detail="No streak freezes available")
+            
+        # Deduct freeze
+        supabase_admin.rpc("decrement_streak_freeze", {"user_uuid": request.user_id}).execute()
+        
+        # Restore streak logic (simplified mock)
+        # In real app: find last streak value and restore it
+        
+        return {"status": "success", "message": "Streak Freeze Used"}
+        
+    except Exception as e:
+         # Fallback if RPC not made, just direct update
+         # supabase_admin.table("profiles").update({"streak_freezes_available": existing - 1}).eq("id", request.user_id).execute()
+         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/webhook")
 async def stripe_webhook(request: Request):
@@ -49,55 +141,90 @@ async def stripe_webhook(request: Request):
     # Handle the specific event
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        user_id = session.get('client_reference_id') # You must pass this in the initial checkout create
-        if user_id:
-            supabase_admin.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
-        # Here you would call Supabase to set is_pro = True
-        # You can use the 'client_reference_id' or 'customer_email' to find the user
-        print(f"User {user_id} upgraded to Pro via Webhook.")
-        # TO DO: Add Supabase Python Admin SDK call here to update the user profile
+        user_id = session.get('client_reference_id') 
+        mode = session.get('mode')
         
+        if user_id:
+            if mode == 'subscription':
+                supabase_admin.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
+                print(f"User {user_id} upgraded to Pro via Webhook.")
+            elif mode == 'payment':
+                 # Handle One-Time Purchases
+                 metadata = session.get('metadata', {})
+                 purchase_type = metadata.get('type')
+                 
+                 if purchase_type == 'streak_freeze':
+                      # Increment freeze count
+                      # Using RPC for atomicity would be better, but direct read-update for simplicity here
+                      profile = supabase_admin.table("profiles").select("streak_freezes_available").eq("id", user_id).execute()
+                      current_freezes = profile.data[0]['streak_freezes_available'] if profile.data else 0
+                      supabase_admin.table("profiles").update({"streak_freezes_available": current_freezes + 1}).eq("id", user_id).execute()
+                      print(f"User {user_id} purchased a Streak Freeze.")
+                      
+                 elif purchase_type == 'extra_goal':
+                      profile = supabase_admin.table("profiles").select("extra_goal_slots").eq("id", user_id).execute()
+                      current_slots = profile.data[0]['extra_goal_slots'] if profile.data else 0
+                      supabase_admin.table("profiles").update({"extra_goal_slots": current_slots + 1}).eq("id", user_id).execute()
+                      print(f"User {user_id} purchased an extra goal slot.")
+
     elif event['type'] == 'customer.subscription.deleted':
-        # Handle cancellation
         subscription = event['data']['object']
+        # Logic to revoke access (if we mapped sub ID to user)
+        # For now, simplistic implementation
         print(f"Subscription Canceled: {subscription['id']}")
-        # TO DO: Add Supabase call to set is_pro = False
 
     return {"status": "success"}    
 
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
-        # Define your Stripe Price IDs from your dashboard
-        price_id = STRIPE_PRICE_ID_MONTHLY if request.plan == "monthly" else STRIPE_PRICE_ID_YEARLY
+        price_id = None
+        mode = 'subscription'
+        metadata = {}
         
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            client_reference_id=request.user_id,
-            line_items=[{
+        if request.plan == 'monthly':
+            price_id = STRIPE_PRICE_ID_MONTHLY
+        elif request.plan == 'yearly':
+            price_id = STRIPE_PRICE_ID_YEARLY
+        elif request.plan == 'streak_freeze':
+            price_id = os.getenv("STRIPE_PRICE_ID_FREEZE") 
+            mode = 'payment'
+            metadata = {'type': 'streak_freeze'}
+        elif request.plan == 'extra_goal':
+            price_id = os.getenv("STRIPE_PRICE_ID_GOAL")
+            mode = 'payment'
+            metadata = {'type': 'extra_goal'}
+            
+        if not price_id:
+             raise HTTPException(status_code=400, detail="Invalid plan or missing price configuration.")
+
+        session_args = {
+            'payment_method_types': ['card'],
+            'client_reference_id': request.user_id,
+            'line_items': [{
                 'price': price_id,
                 'quantity': 1,
             }],
-            mode='subscription',
-            subscription_data={
-                'trial_period_days': 7, 
-            },
-            # This ensures they must enter a card to start the trial
-            payment_method_collection='always',
-            success_url=request.success_url,
-            cancel_url=request.cancel_url,
-        )
+            'mode': mode,
+            'success_url': request.success_url,
+            'cancel_url': request.cancel_url,
+            'metadata': metadata
+        }
+
+        if mode == 'subscription':
+             session_args['subscription_data'] = {'trial_period_days': 7}
+             session_args['payment_method_collection'] = 'always'
+        
+        session = stripe.checkout.Session.create(**session_args)
         return {"sessionId": session.id}
     except stripe.error.StripeError as e:
-        # This will print the exact reason (e.g., "No such price: price_123_monthly") 
-        # to your Python terminal
         print(f"CRITICAL ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
     except Exception as e:
         print(f"critical error: {str(e)}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

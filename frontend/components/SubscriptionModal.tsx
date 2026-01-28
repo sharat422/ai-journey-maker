@@ -48,7 +48,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  const currentPrice = billingCycle === 'monthly' ? '$6.99' : '$69.99';
+  const currentPrice = billingCycle === 'monthly' ? '$4.99' : '$49.99';
   const currentInterval = billingCycle === 'monthly' ? '/ mo' : '/ year';
 
   return (
