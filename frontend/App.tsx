@@ -357,8 +357,18 @@ const App: React.FC = () => {
           if (action === 'sub_monthly' || action === 'sub_yearly') {
             setMonetizationModal(prev => ({ ...prev, isOpen: false }));
             setIsSubscriptionModalOpen(true);
+          } else if (action === 'unlock_insight') {
+            // Free value unlock - just close the modal
+            setMonetizationModal(prev => ({ ...prev, isOpen: false }));
+            // Optionally show a toast or navigate to insights
+            alert("🎉 Today's insight unlocked! Keep up the great work!");
+          } else if (action === 'save_streak') {
+            // User wants to protect their streak - show purchase options
+            setMonetizationModal(prev => ({ ...prev, isOpen: true, mode: 'limit_reached' }));
+          } else {
+            // Handle other actions like 'buy_freeze', 'buy_goal', etc.
+            setMonetizationModal(prev => ({ ...prev, isOpen: false }));
           }
-          // e.g. handle 'buy_freeze' here
         }}
       />
 
