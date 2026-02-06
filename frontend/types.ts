@@ -55,3 +55,14 @@ export interface UserStats {
   totalStepsCompleted: number;
 }
 
+export interface Blog {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorEmail: string;
+  authorName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

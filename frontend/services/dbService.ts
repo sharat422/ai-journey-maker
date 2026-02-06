@@ -1,5 +1,5 @@
 
-import { Journey } from '../types';
+import { Journey, Blog } from '../types';
 import { supabase } from './supabaseClient';
 
 class StrideDB {
@@ -84,6 +84,98 @@ class StrideDB {
       .getPublicUrl(filePath);
 
     return data.publicUrl;
+  }
+
+  // Blog Methods
+  async getBlogs(): Promise<Blog[]> {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(b => ({
+      id: b.id,
+      title: b.title,
+      content: b.content,
+      authorId: b.author_id,
+      authorEmail: b.author_email,
+      authorName: b.author_name,
+      createdAt: b.created_at,
+      updatedAt: b.updated_at
+    }));
+  }
+
+  async getBlog(id: string): Promise<Blog | null> {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      title: data.title,
+      content: data.content,
+      authorId: data.author_id,
+      authorEmail: data.author_email,
+      authorName: data.author_name,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
+  }
+
+  async saveBlog(blog: Partial<Blog> & { title: string; content: string; authorId: string; authorEmail: string; authorName?: string }): Promise<Blog> {
+    const now = new Date().toISOString();
+    const isNew = !blog.id;
+
+    const dbBlog = {
+      id: blog.id || crypto.randomUUID(),
+      title: blog.title,
+      content: blog.content,
+      author_id: blog.authorId,
+      author_email: blog.authorEmail,
+      author_name: blog.authorName || null,
+      created_at: blog.createdAt || now,
+      updated_at: now
+    };
+
+    const { data, error } = await supabase
+      .from('blogs')
+      .upsert(dbBlog, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Blog Save Error:", error);
+      throw error;
+    }
+
+    return {
+      id: data.id,
+      title: data.title,
+      content: data.content,
+      authorId: data.author_id,
+      authorEmail: data.author_email,
+      authorName: data.author_name,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
+  }
+
+  async deleteBlog(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('blogs')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   }
 }
 

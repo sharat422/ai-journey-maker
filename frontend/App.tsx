@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Journey, AppTheme, User } from './types';
+import { Journey, AppTheme, User, Blog } from './types';
 import Dashboard from './components/Dashboard';
 import JourneyBuilder from './components/JourneyBuilder';
 import JourneyDetail from './components/JourneyDetail';
@@ -7,6 +7,9 @@ import LegalView from './components/LegalView';
 import SubscriptionModal from './components/SubscriptionModal';
 import AuthView from './components/AuthView';
 import SettingsView from './components/SettingsView';
+import BlogList from './components/BlogList';
+import BlogDetail from './components/BlogDetail';
+import BlogEditor from './components/BlogEditor';
 import { db } from './services/dbService';
 import { auth } from './services/authService';
 
@@ -14,11 +17,20 @@ import { StreakService } from './services/StreakService';
 import MonetizationModal from './components/MonetizationModal';
 import GrowthSharingModal from './components/GrowthSharingModal';
 
+// Admin email for blog management
+const ADMIN_EMAIL = 'sharatreddy46@gmail.com';
+
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [journeys, setJourneys] = useState<Journey[]>([]);
-  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms' | 'settings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms' | 'settings' | 'blog-list' | 'blog-detail' | 'blog-editor'>('dashboard');
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
+
+  // Blog State
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
+  const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
+  const [isSavingBlog, setIsSavingBlog] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>((localStorage.getItem('stride_theme') as AppTheme) || 'default');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -195,6 +207,68 @@ const App: React.FC = () => {
     await db.setProStatus(user.id, true);
   };
 
+  // Blog Handlers
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
+  const loadBlogs = async () => {
+    try {
+      const fetchedBlogs = await db.getBlogs();
+      setBlogs(fetchedBlogs);
+    } catch (err) {
+      console.error('Failed to load blogs:', err);
+    }
+  };
+
+  const handleSaveBlog = async (data: { title: string; content: string }) => {
+    if (!user || !isAdmin) return;
+    setIsSavingBlog(true);
+    try {
+      const savedBlog = await db.saveBlog({
+        ...editingBlog,
+        title: data.title,
+        content: data.content,
+        authorId: user.id,
+        authorEmail: user.email,
+        authorName: user.name
+      });
+
+      if (editingBlog) {
+        setBlogs(blogs.map(b => b.id === savedBlog.id ? savedBlog : b));
+      } else {
+        setBlogs([savedBlog, ...blogs]);
+      }
+
+      setEditingBlog(null);
+      setSelectedBlogId(savedBlog.id);
+      setView('blog-detail');
+    } catch (err) {
+      console.error('Failed to save blog:', err);
+      alert('Could not save the blog post. Please try again.');
+    } finally {
+      setIsSavingBlog(false);
+    }
+  };
+
+  const handleDeleteBlog = async (id: string) => {
+    if (!isAdmin) return;
+    try {
+      await db.deleteBlog(id);
+      setBlogs(blogs.filter(b => b.id !== id));
+      setSelectedBlogId(null);
+      setView('blog-list');
+    } catch (err) {
+      console.error('Failed to delete blog:', err);
+      alert('Could not delete the blog post. Please try again.');
+    }
+  };
+
+  // Load blogs when switching to blog views
+  useEffect(() => {
+    if (view === 'blog-list' && blogs.length === 0) {
+      loadBlogs();
+    }
+  }, [view]);
+
   if (!isInitialized) return null;
 
   if (!user) {
@@ -202,6 +276,7 @@ const App: React.FC = () => {
   }
 
   const currentJourney = journeys.find(j => j.id === selectedJourneyId);
+  const currentBlog = blogs.find(b => b.id === selectedBlogId);
   const themes: { id: AppTheme, color: string }[] = [
     { id: 'default', color: 'bg-[#4f46e5]' },
     { id: 'emerald', color: 'bg-[#059669]' },
@@ -261,6 +336,12 @@ const App: React.FC = () => {
               <button onClick={() => setIsSubscriptionModalOpen(true)} className="text-sm font-bold text-[var(--primary-text)] hidden sm:block">Go Pro</button>
             )}
             <button onClick={() => setView('dashboard')} className={`text-sm font-semibold ${view === 'dashboard' ? 'text-[var(--primary-text)] font-bold' : 'text-slate-500'}`}>Home</button>
+            <button
+              onClick={() => setView('blog-list')}
+              className={`text-sm font-semibold ${view === 'blog-list' || view === 'blog-detail' || view === 'blog-editor' ? 'text-[var(--primary-text)] font-bold' : 'text-slate-500'}`}
+            >
+              Blog
+            </button>
             <button
               onClick={() => {
                 if (isRestricted) {
@@ -340,6 +421,46 @@ const App: React.FC = () => {
                 <p className="text-slate-500 mb-6">Your trial has expired. Subscribe to continue.</p>
                 <button onClick={() => setIsSubscriptionModalOpen(true)} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Restore Access</button>
               </div>
+            )}
+
+            {/* Blog Views */}
+            {view === 'blog-list' && (
+              <BlogList
+                blogs={blogs}
+                isAdmin={isAdmin}
+                onSelectBlog={(id) => {
+                  setSelectedBlogId(id);
+                  setView('blog-detail');
+                }}
+                onCreateNew={() => {
+                  setEditingBlog(null);
+                  setView('blog-editor');
+                }}
+                onBack={() => setView('dashboard')}
+              />
+            )}
+            {view === 'blog-detail' && currentBlog && (
+              <BlogDetail
+                blog={currentBlog}
+                isAdmin={isAdmin}
+                onEdit={() => {
+                  setEditingBlog(currentBlog);
+                  setView('blog-editor');
+                }}
+                onDelete={() => handleDeleteBlog(currentBlog.id)}
+                onBack={() => setView('blog-list')}
+              />
+            )}
+            {view === 'blog-editor' && isAdmin && (
+              <BlogEditor
+                blog={editingBlog}
+                onSave={handleSaveBlog}
+                onCancel={() => {
+                  setEditingBlog(null);
+                  setView(selectedBlogId ? 'blog-detail' : 'blog-list');
+                }}
+                isSaving={isSavingBlog}
+              />
             )}
           </>
         )}
