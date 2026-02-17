@@ -300,9 +300,11 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setView('dashboard')}>
             <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center shadow-lg">
+              
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
+
             </div>
             <span className="text-xl font-bold text-slate-800">PrimePro <span className="text-[var(--primary-text)]">AI</span></span>
             {user.isPro && <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded font-black ml-1">Pro</span>}
