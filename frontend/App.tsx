@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Journey, AppTheme, User, Blog } from './types';
+import { Journey, AppTheme, User, Blog, Goal } from './types';
 import Dashboard from './components/Dashboard';
 import JourneyBuilder from './components/JourneyBuilder';
 import JourneyDetail from './components/JourneyDetail';
@@ -10,6 +10,8 @@ import SettingsView from './components/SettingsView';
 import BlogList from './components/BlogList';
 import BlogDetail from './components/BlogDetail';
 import BlogEditor from './components/BlogEditor';
+import GoalsView from './components/GoalsView';
+import GoalEditor from './components/GoalEditor';
 import { db } from './services/dbService';
 import { auth } from './services/authService';
 
@@ -23,7 +25,7 @@ const ADMIN_EMAIL = 'sharatreddy46@gmail.com';
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [journeys, setJourneys] = useState<Journey[]>([]);
-  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms' | 'settings' | 'blog-list' | 'blog-detail' | 'blog-editor'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'create' | 'detail' | 'privacy' | 'terms' | 'settings' | 'blog-list' | 'blog-detail' | 'blog-editor' | 'goals' | 'goal-editor' | 'auth'>('dashboard');
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
 
   // Blog State
@@ -31,6 +33,12 @@ const App: React.FC = () => {
   const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const [isSavingBlog, setIsSavingBlog] = useState(false);
+
+  // Goals State
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
+  const [initialGoalDate, setInitialGoalDate] = useState<Date | null>(null);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>((localStorage.getItem('stride_theme') as AppTheme) || 'default');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -262,6 +270,53 @@ const App: React.FC = () => {
     }
   };
 
+  // Goal Handlers
+  const handleCreateGoal = async (data: { title: string; description: string; dateTime: string }) => {
+    if (!user) return;
+    setIsSavingGoal(true);
+    try {
+      const newGoal: Goal = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        title: data.title,
+        description: data.description,
+        dateTime: data.dateTime,
+        completed: false,
+        createdAt: new Date().toISOString()
+      };
+      await db.saveGoal(newGoal);
+      setGoals(prev => [...prev, newGoal]);
+    } catch (err) {
+      console.error('Failed to create goal:', err);
+      alert('Could not create the goal. Please try again.');
+    } finally {
+      setIsSavingGoal(false);
+    }
+  };
+
+  const handleUpdateGoal = async (updatedGoal: Goal) => {
+    setIsSavingGoal(true);
+    try {
+      await db.saveGoal(updatedGoal);
+      setGoals(goals.map(g => g.id === updatedGoal.id ? updatedGoal : g));
+    } catch (err) {
+      console.error('Failed to update goal:', err);
+      alert('Could not update the goal. Please try again.');
+    } finally {
+      setIsSavingGoal(false);
+    }
+  };
+
+  const handleDeleteGoal = async (id: string) => {
+    try {
+      await db.deleteGoal(id);
+      setGoals(goals.filter(g => g.id !== id));
+    } catch (err) {
+      console.error('Failed to delete goal:', err);
+      alert('Could not delete the goal. Please try again.');
+    }
+  };
+
   // Load blogs when switching to blog views
   useEffect(() => {
     if (view === 'blog-list' && blogs.length === 0) {
@@ -269,11 +324,25 @@ const App: React.FC = () => {
     }
   }, [view]);
 
-  if (!isInitialized) return null;
+  // Load goals when user is authenticated
+  useEffect(() => {
+    if (user) {
+      loadGoals();
+    } else {
+      setGoals([]);
+    }
+  }, [user]);
 
-  if (!user) {
-    return <AuthView onLogin={(u) => setUser(u)} />;
-  }
+  const loadGoals = async () => {
+    try {
+      const fetchedGoals = await db.getUserGoals(user!.id);
+      setGoals(fetchedGoals);
+    } catch (err) {
+      console.error('Failed to load goals:', err);
+    }
+  };
+
+  if (!isInitialized) return null;
 
   const currentJourney = journeys.find(j => j.id === selectedJourneyId);
   const currentBlog = blogs.find(b => b.id === selectedBlogId);
@@ -307,7 +376,7 @@ const App: React.FC = () => {
 
             </div>
             <span className="text-xl font-bold text-slate-800">PrimePro <span className="text-[var(--primary-text)]">AI</span></span>
-            {user.isPro && <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded font-black ml-1">Pro</span>}
+            {user?.isPro && <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded font-black ml-1">Pro</span>}
           </div>
 
           <div className="flex items-center gap-6">
@@ -324,17 +393,23 @@ const App: React.FC = () => {
               ))}
             </div>
 
-            <button onClick={() => setView('settings')} className="relative group">
-              {user.avatar ? (
-                <img src={user.avatar} className="w-8 h-8 rounded-full border border-slate-200" alt="Profile" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-400">
-                  {user.name?.charAt(0) || user.email.charAt(0)}
-                </div>
-              )}
-            </button>
+            {user ? (
+              <button onClick={() => setView('settings')} className="relative group">
+                {user.avatar ? (
+                  <img src={user.avatar} className="w-8 h-8 rounded-full border border-slate-200" alt="Profile" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black text-slate-400">
+                    {user.name?.charAt(0) || user.email.charAt(0)}
+                  </div>
+                )}
+              </button>
+            ) : (
+              <button onClick={() => setView('auth')} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-all">
+                Sign In
+              </button>
+            )}
 
-            {!user.isPro && (
+            {user && !user.isPro && (
               <button onClick={() => setIsSubscriptionModalOpen(true)} className="text-sm font-bold text-[var(--primary-text)] hidden sm:block">Go Pro</button>
             )}
             <button onClick={() => setView('dashboard')} className={`text-sm font-semibold ${view === 'dashboard' ? 'text-[var(--primary-text)] font-bold' : 'text-slate-500'}`}>Home</button>
@@ -345,14 +420,22 @@ const App: React.FC = () => {
               Blog
             </button>
             <button
+              onClick={() => setView('goals')}
+              className={`text-sm font-semibold ${view === 'goals' ? 'text-[var(--primary-text)] font-bold' : 'text-slate-500'}`}
+            >
+              Goals
+            </button>
+            <button
               onClick={() => {
-                if (isRestricted) {
+                if (!user) {
+                  setView('auth');
+                } else if (isRestricted) {
                   setIsSubscriptionModalOpen(true);
                 } else {
                   setView('create');
                 }
               }}
-              className={`px-4 py-2 text-white text-sm font-bold rounded-lg transition-all ${isRestricted ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 active:scale-95'}`}
+              className={`px-4 py-2 text-white text-sm font-bold rounded-lg transition-all ${!user || isRestricted ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 active:scale-95'}`}
             >
               New Stride
             </button>
@@ -371,8 +454,8 @@ const App: React.FC = () => {
             {view === 'dashboard' && (
               <Dashboard
                 journeys={journeys}
-                isPro={user.isPro}
-                userName={user.name || user.email.split('@')[0]}
+                isPro={user?.isPro || false}
+                userName={user ? (user.name || user.email.split('@')[0]) : 'Guest'}
                 onUpgrade={() => setIsSubscriptionModalOpen(true)}
                 onSelectJourney={(id) => {
                   if (isRestricted) {
@@ -385,6 +468,10 @@ const App: React.FC = () => {
                   }
                 }}
                 onCreateNew={() => {
+                  if (!user) {
+                    setView('auth');
+                    return;
+                  }
                   const activeCount = journeys.filter(j => j.progress < 100).length;
                   if (!user?.isPro && activeCount >= 2) {
                     setMonetizationModal({
@@ -411,7 +498,7 @@ const App: React.FC = () => {
             )}
             {(view === 'privacy' || view === 'terms') && <LegalView type={view} onBack={() => setView('dashboard')} />}
             {/* Hard Block usage of builders if restricted, even if state was manually set */}
-            {view === 'create' && !isRestricted && <JourneyBuilder onJourneyCreated={handleCreateJourney} onCancel={() => setView('dashboard')} isPro={user.isPro} />}
+            {view === 'create' && !isRestricted && <JourneyBuilder onJourneyCreated={handleCreateJourney} onCancel={() => setView('dashboard')} isPro={user?.isPro || false} />}
             {view === 'detail' && currentJourney && !isRestricted && <JourneyDetail journey={currentJourney} onUpdateJourney={handleUpdateJourney} onBack={() => setView('dashboard')} />}
             {view === 'settings' && <SettingsView user={user} onBack={() => setView('dashboard')} />}
 
@@ -464,6 +551,62 @@ const App: React.FC = () => {
                 isSaving={isSavingBlog}
               />
             )}
+
+            {/* Goals View */}
+            {view === 'goals' && (
+              <GoalsView
+                goals={goals}
+                onCreateNewGoal={(date) => {
+                  setEditingGoal(null);
+                  setInitialGoalDate(date || null);
+                  setView('goal-editor');
+                }}
+                onEditGoal={(goal) => {
+                  setEditingGoal(goal);
+                  setView('goal-editor');
+                }}
+                onDeleteGoal={handleDeleteGoal}
+                onBack={() => setView('dashboard')}
+                isSaving={isSavingGoal}
+              />
+            )}
+
+            {/* Goal Editor */}
+            {view === 'goal-editor' && (
+              <GoalEditor
+                goal={editingGoal}
+                initialDate={initialGoalDate}
+                onSave={(data) => {
+                  if (editingGoal) {
+                    handleUpdateGoal({
+                      ...editingGoal,
+                      title: data.title,
+                      description: data.description,
+                      dateTime: data.dateTime
+                    });
+                  } else {
+                    handleCreateGoal(data);
+                  }
+                  setView('goals');
+                  setEditingGoal(null);
+                  setInitialGoalDate(null);
+                }}
+                onCancel={() => {
+                  setEditingGoal(null);
+                  setView('goals');
+                  setInitialGoalDate(null);
+                }}
+                isSaving={isSavingGoal}
+              />
+            )}
+
+            {/* Auth View */}
+            {view === 'auth' && (
+              <AuthView onLogin={(u) => {
+                setUser(u);
+                setView('dashboard');
+              }} />
+            )}
           </>
         )}
       </main>
@@ -509,7 +652,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-slate-400 text-xs font-medium tracking-tight">&copy; 2026 Prime Pro AI. All Rights Reserved.</p>
           <div className="flex gap-8">
-            <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sign Out</button>
+            {user && <button onClick={handleLogout} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sign Out</button>}
             <button onClick={() => setView('privacy')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Privacy</button>
             <button onClick={() => setView('terms')} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Terms</button>
           </div>

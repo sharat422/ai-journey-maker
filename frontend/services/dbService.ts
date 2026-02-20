@@ -1,5 +1,5 @@
 
-import { Journey, Blog } from '../types';
+import { Journey, Blog, Goal } from '../types';
 import { supabase } from './supabaseClient';
 
 class StrideDB {
@@ -172,6 +172,51 @@ class StrideDB {
   async deleteBlog(id: string): Promise<void> {
     const { error } = await supabase
       .from('blogs')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  async getUserGoals(userId: string): Promise<Goal[]> {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date_time', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map(g => ({
+      id: g.id,
+      userId: g.user_id,
+      title: g.title,
+      description: g.description,
+      dateTime: g.date_time,
+      completed: g.completed,
+      createdAt: g.created_at
+    }));
+  }
+
+  async saveGoal(goal: Goal): Promise<void> {
+    const { error } = await supabase
+      .from('goals')
+      .upsert({
+        id: goal.id,
+        user_id: goal.userId,
+        title: goal.title,
+        description: goal.description,
+        date_time: goal.dateTime,
+        completed: goal.completed,
+        created_at: goal.createdAt
+      }, { onConflict: 'id' });
+
+    if (error) throw error;
+  }
+
+  async deleteGoal(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('goals')
       .delete()
       .eq('id', id);
 

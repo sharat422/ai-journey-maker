@@ -2,7 +2,7 @@
 import { supabase } from './supabaseClient';
 import { UserStreak } from '../types';
 
-const API_URL = 'http://localhost:8000'; // Make sure this matches your deployed backend URL in production
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 export const StreakService = {
 

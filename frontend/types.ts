@@ -66,3 +66,13 @@ export interface Blog {
   updatedAt: string;
 }
 
+export interface Goal {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  dateTime: string; // ISO string for date and time
+  completed: boolean;
+  createdAt: string;
+}
+
