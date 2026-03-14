@@ -42,6 +42,15 @@ const App: React.FC = () => {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>((localStorage.getItem('stride_theme') as AppTheme) || 'default');
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Apply theme class to <html> so CSS variables cascade to body + all children
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('theme-emerald', 'theme-rose', 'theme-amber', 'theme-slate');
+    if (theme !== 'default') {
+      root.classList.add(`theme-${theme}`);
+    }
+  }, [theme]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Monetization State
@@ -364,14 +373,14 @@ const App: React.FC = () => {
   const isRestricted = !user?.isPro && isTrialExpired;
 
   return (
-    <div className={`min-h-screen pb-12 flex flex-col transition-colors duration-300 ${theme === 'default' ? '' : `theme-${theme}`}`}>
+    <div className="min-h-screen pb-12 flex flex-col">
       <nav className="sticky top-0 z-50 glass-morphism border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setView('dashboard')}>
             <div className="w-8 h-8 bg-[var(--primary)] rounded-lg flex items-center justify-center shadow-lg">
-              
+
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
 
             </div>
@@ -384,11 +393,15 @@ const App: React.FC = () => {
               {themes.map((t) => (
                 <button
                   key={t.id}
+                  title={t.id.charAt(0).toUpperCase() + t.id.slice(1)}
                   onClick={() => {
                     setTheme(t.id);
                     localStorage.setItem('stride_theme', t.id);
                   }}
-                  className={`w-5 h-5 rounded-full ${t.color} border-2 ${theme === t.id ? 'border-white scale-110 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  className={`w-5 h-5 rounded-full ${t.color} transition-all duration-200 ${theme === t.id
+                    ? 'ring-2 ring-offset-2 ring-offset-slate-100 ring-slate-400 scale-110 shadow-md'
+                    : 'opacity-60 hover:opacity-100 hover:scale-105'
+                    }`}
                 />
               ))}
             </div>
@@ -425,20 +438,7 @@ const App: React.FC = () => {
             >
               Goals
             </button>
-            <button
-              onClick={() => {
-                if (!user) {
-                  setView('auth');
-                } else if (isRestricted) {
-                  setIsSubscriptionModalOpen(true);
-                } else {
-                  setView('create');
-                }
-              }}
-              className={`px-4 py-2 text-white text-sm font-bold rounded-lg transition-all ${!user || isRestricted ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 active:scale-95'}`}
-            >
-              New Stride
-            </button>
+
           </div>
         </div>
       </nav>

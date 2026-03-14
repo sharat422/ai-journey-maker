@@ -1,5 +1,9 @@
 
 import React from 'react';
+import TermsOfService from './TermsOfService';
+import PrivacyPolicy from './PrivacyPolicy';
+
+
 
 interface LegalViewProps {
   type: 'privacy' | 'terms';
@@ -25,28 +29,12 @@ const LegalView: React.FC<LegalViewProps> = ({ type, onBack }) => {
         <p className="text-slate-500 text-sm mb-8">Brand: PrimePro | Updated: Jan 2026</p>
 
         {isPrivacy ? (
-          <div className="space-y-6 text-slate-600 leading-relaxed text-sm">
-            <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-3">1. Introduction</h2>
-              <p>Welcome to PrimePro. We are dedicated to helping you achieve goals while keeping your data private. This policy outlines how your strides are managed.</p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-3">2. Data Storage</h2>
-              <p>PrimePro stores your journey data locally in your browser. We only send your goal text to Google's Gemini API for roadmap generation.</p>
-            </section>
-          </div>
+          <PrivacyPolicy />
         ) : (
-          <div className="space-y-6 text-slate-600 leading-relaxed text-sm">
-            <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-3">1. Terms</h2>
-              <p>By using PrimePro, you agree to these terms. PrimePro is an AI coaching platform provided for informational and motivational purposes.</p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-3">2. Pro Subscription</h2>
-              <p>PrimePro Pro offers advanced features. Payments are handled via Stripe and are non-refundable after the cycle begins.</p>
-            </section>
-          </div>
+
+          <TermsOfService />
         )}
+
 
         <div className="mt-12 pt-8 border-t border-slate-100 flex justify-center">
           <button

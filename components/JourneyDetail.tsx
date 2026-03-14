@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Journey, Milestone, Step } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { analyzeJourneyProgress, AIInsight } from '../services/geminiService';
+import { analyzeJourneyProgress, AIInsight } from '../services/claudeService';
 import ExportSocialModal from './ExportSocialModal';
 
 interface JourneyDetailProps {

@@ -28,8 +28,19 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
         user = await auth.signUp(email, password, name);
       }
       onLogin(user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed. Please check your credentials.");
+    } catch (err: any) {
+      // Log error to console for debugging
+      console.error("Login error:", err);
+      // Show more details if available
+      if (err?.message) {
+        setError(err.message);
+      } else if (typeof err === 'string') {
+        setError(err);
+      } else if (err?.error_description) {
+        setError(err.error_description);
+      } else {
+        setError("Authentication failed. Please check your credentials and try again.");
+      }
     } finally {
       setIsLoading(false);
     }

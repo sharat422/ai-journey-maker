@@ -6,15 +6,19 @@ from fastapi import Request, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from datetime import date, datetime, timedelta
+import requests
 
 load_dotenv()
+CLAUDE_API_KEY = os.getenv("VITE_CLAUDE_API_KEY")
+CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")
 STRIPE_PRICE_ID_YEARLY = os.getenv("STRIPE_PRICE_ID_YEARLY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY") # Use Service Role for backend bypass
+SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 app = FastAPI()
@@ -32,16 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-from datetime import date, datetime, timedelta
-
-# ... imports ...
-
-# Monetization Constants
-STREAK_REWARD_DAY_1 = 3
-STREAK_REWARD_DAY_2 = 5
-MICRO_PURCHASE_PRICE_ID = "price_H5gg..." # Placeholder, needs env var
-
 class CheckoutRequest(BaseModel):
     plan: str
     user_id: str
@@ -50,17 +44,49 @@ class CheckoutRequest(BaseModel):
 
 class StreakCheckRequest(BaseModel):
     user_id: str
-    timezone_offset: int = 0 # Minutes offset from UTC
+    timezone_offset: int = 0
 
 class UnlockRewardRequest(BaseModel):
     user_id: str
-    reward_type: str # 'video_ad', 'share', 'micro_purchase'
+    reward_type: str
 
+class JourneyRequest(BaseModel):
+    goal: str
+    timeframe: str
+    model: str = "claude-3-5-haiku-20241022"
 
-@app.post("/api/streak/check")
+@app.post("/generate-journey")
+async def generate_journey(request: JourneyRequest):
+    prompt = f"Create a detailed learning roadmap for the following goal: '{request.goal}'. The target timeframe is '{request.timeframe}'. Break it down into logical milestones with actionable steps. Be specific and practical. Return your response as a valid JSON object."
+    headers = {
+        "x-api-key": CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    payload = {
+        "model": request.model,
+        "max_tokens": 4000,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "system": "You are an expert career coach and learning strategist. Always respond with valid JSON."
+    }
+    try:
+        response = requests.post(CLAUDE_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        content = response.json()["content"][0]
+        if content["type"] != "text":
+            raise Exception("Unexpected response type from Claude")
+        data = content["text"]
+        return {"result": data}
+    except Exception as e:
+        print(f"Claude Error: {e}")
+        raise HTTPException(status_code=500, detail="Claude API error: " + str(e))
+
+@app.post("/streak/check")
 async def check_streak(request: StreakCheckRequest):
     try:
-        today = date.today() # Simplified timezone
+        today = date.today()
         
         response = supabase_admin.table("user_streaks").select("*").eq("user_id", request.user_id).execute()
         streak_data = response.data[0] if response.data else None
@@ -81,8 +107,6 @@ async def check_streak(request: StreakCheckRequest):
         elif last_activity == today - timedelta(days=1):
             updated_streak += 1
         else:
-            # Streak broken! Check for automatic freeze usage?
-            # For now, we just reset, frontend can prompt to "Restore" via Micro-purchase
             updated_streak = 1
             
         new_longest = max(longest_streak, updated_streak)
@@ -107,30 +131,22 @@ async def check_streak(request: StreakCheckRequest):
         print(f"Streak Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/use-streak-freeze")
+@app.post("/use-streak-freeze")
 async def use_streak_freeze(request: UnlockRewardRequest):
-    # Request body re-used generic 'UnlockRewardRequest' or make new 'ActionRequest'
     try:
-        # Check if user has freezes
         profile = supabase_admin.table("profiles").select("streak_freezes_available").eq("id", request.user_id).execute()
         if not profile.data or profile.data[0]['streak_freezes_available'] < 1:
             raise HTTPException(status_code=400, detail="No streak freezes available")
             
-        # Deduct freeze
         supabase_admin.rpc("decrement_streak_freeze", {"user_uuid": request.user_id}).execute()
-        
-        # Restore streak logic (simplified mock)
-        # In real app: find last streak value and restore it
         
         return {"status": "success", "message": "Streak Freeze Used"}
         
     except Exception as e:
-         # Fallback if RPC not made, just direct update
-         # supabase_admin.table("profiles").update({"streak_freezes_available": existing - 1}).eq("id", request.user_id).execute()
          raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/webhook")
+@app.post("/webhook")
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -142,10 +158,9 @@ async def stripe_webhook(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Handle the specific event
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        user_id = session.get('client_reference_id') 
+        user_id = session.get('client_reference_id')
         mode = session.get('mode')
         
         if user_id:
@@ -153,13 +168,10 @@ async def stripe_webhook(request: Request):
                 supabase_admin.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
                 print(f"User {user_id} upgraded to Pro via Webhook.")
             elif mode == 'payment':
-                 # Handle One-Time Purchases
                  metadata = session.get('metadata', {})
                  purchase_type = metadata.get('type')
                  
                  if purchase_type == 'streak_freeze':
-                      # Increment freeze count
-                      # Using RPC for atomicity would be better, but direct read-update for simplicity here
                       profile = supabase_admin.table("profiles").select("streak_freezes_available").eq("id", user_id).execute()
                       current_freezes = profile.data[0]['streak_freezes_available'] if profile.data else 0
                       supabase_admin.table("profiles").update({"streak_freezes_available": current_freezes + 1}).eq("id", user_id).execute()
@@ -173,13 +185,11 @@ async def stripe_webhook(request: Request):
 
     elif event['type'] == 'customer.subscription.deleted':
         subscription = event['data']['object']
-        # Logic to revoke access (if we mapped sub ID to user)
-        # For now, simplistic implementation
         print(f"Subscription Canceled: {subscription['id']}")
 
     return {"status": "success"}    
 
-@app.post("/api/create-checkout-session")
+@app.post("/create-checkout-session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
         price_id = None

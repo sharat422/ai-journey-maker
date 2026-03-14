@@ -12,6 +12,8 @@
     --primary-shadow: rgba(79, 70, 229, 0.1);
     --gradient-start: #6366f1;
     --gradient-end: #a855f7;
+    --bg-page: #f1f5f9;
+    --bg-card: #ffffff;
   }
 
   .theme-emerald {
@@ -22,6 +24,8 @@
     --primary-shadow: rgba(5, 150, 105, 0.1);
     --gradient-start: #10b981;
     --gradient-end: #3b82f6;
+    --bg-page: #ecfdf5;
+    --bg-card: #ffffff;
   }
 
   .theme-rose {
@@ -32,6 +36,8 @@
     --primary-shadow: rgba(225, 29, 72, 0.1);
     --gradient-start: #f43f5e;
     --gradient-end: #fb923c;
+    --bg-page: #fff1f2;
+    --bg-card: #ffffff;
   }
 
   .theme-amber {
@@ -42,6 +48,8 @@
     --primary-shadow: rgba(217, 119, 6, 0.1);
     --gradient-start: #f59e0b;
     --gradient-end: #d97706;
+    --bg-page: #fffbeb;
+    --bg-card: #ffffff;
   }
 
   .theme-slate {
@@ -52,11 +60,14 @@
     --primary-shadow: rgba(51, 65, 85, 0.1);
     --gradient-start: #475569;
     --gradient-end: #0f172a;
+    --bg-page: #e2e8f0;
+    --bg-card: #f8fafc;
   }
 
   body {
-    @apply font-sans bg-slate-50 antialiased text-slate-900;
-    transition: background-color 0.3s ease;
+    @apply font-sans antialiased text-slate-900;
+    background-color: var(--bg-page);
+    transition: background-color 0.4s ease;
   }
 }
 

@@ -79,7 +79,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <section className="bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-3xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-[var(--primary-shadow)] transition-all">
           <div>
             <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
-            <p className="opacity-90 max-w-lg">Get access to Gemini 3 Pro roadmaps with deeper reasoning, unlimited journeys, and advanced coaching.</p>
+            <p className="opacity-90 max-w-lg">Get access to Claude 3.5 Sonnet roadmaps with deeper reasoning, unlimited journeys, and advanced coaching.</p>
           </div>
           <button
             onClick={onUpgrade}

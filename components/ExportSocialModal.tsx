@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Journey } from '../types';
-import { generateProgressVideo } from '../services/geminiService';
+import { generateProgressVideo } from '../services/claudeService';
 
 interface ExportSocialModalProps {
   journey: Journey;
