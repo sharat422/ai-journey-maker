@@ -2,7 +2,7 @@
 import { supabase } from './supabaseClient';
 import { UserStreak } from '../types';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_URL = (import.meta as any).env.VITE_BACKEND_URL || 'http://localhost:8001';
 
 export const StreakService = {
 

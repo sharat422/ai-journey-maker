@@ -11,8 +11,8 @@ interface JourneyBuilderProps {
 const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCancel, isPro }) => {
   const [goal, setGoal] = useState('');
   const [timeframe, setTimeframe] = useState('4 weeks');
-  const [selectedModel, setSelectedModel] = useState<'claude-3-5-haiku-20241022' | 'claude-3-5-sonnet-20241022'>(
-    isPro ? 'claude-3-5-sonnet-20241022' : 'claude-3-5-haiku-20241022'
+  const [selectedModel, setSelectedModel] = useState<'gemini-2.0-flash' | 'gemini-2.0-pro-exp'>(
+    isPro ? 'gemini-2.0-pro-exp' : 'gemini-2.0-flash'
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,15 +52,15 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
-              onClick={() => setSelectedModel('claude-3-5-haiku-20241022')}
-              className={`p-4 rounded-2xl border text-left transition-all ${selectedModel === 'claude-3-5-haiku-20241022'
+              onClick={() => setSelectedModel('gemini-2.0-flash')}
+              className={`p-4 rounded-2xl border text-left transition-all ${selectedModel === 'gemini-2.0-flash'
                 ? 'border-[var(--primary)] bg-[var(--primary-soft)] ring-2 ring-[var(--primary)] ring-inset'
                 : 'border-slate-200 hover:border-[var(--primary-shadow)]'
                 }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-slate-900">Claude 3.5 Haiku</span>
-                {selectedModel === 'claude-3-5-haiku-20241022' && (
+                <span className="font-bold text-slate-900">Gemini 2.0 Flash</span>
+                {selectedModel === 'gemini-2.0-flash' && (
                   <svg className="w-4 h-4 text-[var(--primary-text)]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
@@ -73,19 +73,19 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
               <button
                 type="button"
                 disabled={!isPro}
-                onClick={() => setSelectedModel('claude-3-5-sonnet-20241022')}
+                onClick={() => setSelectedModel('gemini-2.0-pro-exp')}
                 className={`w-full p-4 rounded-2xl border text-left transition-all h-full ${!isPro
                   ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
-                  : selectedModel === 'claude-3-5-sonnet-20241022'
+                  : selectedModel === 'gemini-2.0-pro-exp'
                     ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-500 ring-inset'
                     : 'border-slate-200 hover:border-amber-200'
                   }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className={`font-bold ${!isPro ? 'text-slate-400' : 'text-slate-900'}`}>Claude 3.5 Sonnet</span>
+                  <span className={`font-bold ${!isPro ? 'text-slate-400' : 'text-slate-900'}`}>Gemini 2.0 Pro</span>
                   {!isPro ? (
                     <span className="bg-slate-200 text-slate-500 text-[8px] px-1.5 py-0.5 rounded font-black uppercase">PRO</span>
-                  ) : selectedModel === 'claude-3-5-sonnet-20241022' && (
+                  ) : selectedModel === 'gemini-2.0-pro-exp' && (
                     <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -135,7 +135,7 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
           </div>
         )}
 
-        {selectedModel === 'claude-3-5-sonnet-20241022' && (
+        {selectedModel === 'gemini-2.0-pro-exp' && (
           <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-lg shrink-0">
               <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
@@ -161,7 +161,7 @@ const JourneyBuilder: React.FC<JourneyBuilderProps> = ({ onJourneyCreated, onCan
             disabled={loading}
             className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${loading
               ? 'bg-slate-400'
-              : selectedModel === 'claude-3-5-sonnet-20241022'
+              : selectedModel === 'gemini-2.0-pro-exp'
                 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100'
                 : 'bg-[var(--primary)] hover:opacity-90 shadow-[var(--primary-shadow)]'
               }`}

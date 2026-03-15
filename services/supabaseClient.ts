@@ -2,10 +2,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
-console.log("Supabase URL:", supabaseUrl);
-console.log("Supabase Key:", supabaseAnonKey);
+//console.log("Supabase URL:", supabaseUrl);
+//console.log("Supabase Key:", supabaseAnonKey);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("CRITICAL: Supabase credentials missing. Check VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.");
